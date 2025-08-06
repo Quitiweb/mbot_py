@@ -83,14 +83,21 @@ class MBotController:
         gesture = GESTURES[gesture_name]
         print(f"🎭 Realizando gesto: {gesture_name}")
 
-        # Resetear flag de parada
+        # Detener gesto anterior (solo físicamente, no cambiar flags)
+        if self.mbot:
+            self.mbot.doMove(0, 0)
+            self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+            self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+
+        # Resetear flag de parada DESPUÉS de limpiar estado anterior
         self._stop_requested = False
+        self.is_performing_gesture = True
 
-        # Detener gesto anterior
-        self.stop_gesture()
-
-        # Iniciar nuevo gesto de forma simple (sin hilos por ahora)
+        # Iniciar nuevo gesto de forma simple
         self._execute_simple_gesture(gesture)
+
+        # Marcar que terminó el gesto
+        self.is_performing_gesture = False
 
     def _execute_simple_gesture(self, gesture):
         """Ejecuta un gesto de forma simple sin hilos"""
@@ -106,6 +113,14 @@ class MBotController:
                 self._simple_sway()
             elif movement == "slight_move":
                 self._simple_move()
+            elif movement == "spin":
+                self._simple_spin()
+            elif movement == "head_shake":
+                self._simple_head_shake()
+            elif movement == "back_away":
+                self._simple_back_away()
+            elif movement == "stop":
+                self._simple_stop()
 
             # Ejecutar LEDs
             self._simple_leds(leds)
@@ -151,6 +166,47 @@ class MBotController:
         time.sleep(0.3)
         self.mbot.doMove(0, 0)
 
+    def _simple_spin(self):
+        """Giro completo emocionado"""
+        if self._stop_requested or not self.mbot:
+            return
+        # Giro rápido a la derecha
+        self.mbot.doMove(100, -100)
+        time.sleep(1.2)  # Tiempo suficiente para giro completo
+        self.mbot.doMove(0, 0)
+
+    def _simple_head_shake(self):
+        """Movimiento de "no" (confusión)"""
+        if self._stop_requested or not self.mbot:
+            return
+        # Pequeños giros alternados
+        for _ in range(3):  # 3 sacudidas
+            if self._stop_requested:
+                break
+            self.mbot.doMove(40, -40)
+            time.sleep(0.2)
+            if self._stop_requested:
+                break
+            self.mbot.doMove(-40, 40)
+            time.sleep(0.2)
+        self.mbot.doMove(0, 0)
+
+    def _simple_back_away(self):
+        """Retroceder tristemente"""
+        if self._stop_requested or not self.mbot:
+            return
+        # Retroceso lento y triste
+        self.mbot.doMove(-60, -60)
+        time.sleep(0.8)
+        self.mbot.doMove(0, 0)
+
+    def _simple_stop(self):
+        """Permanecer quieto (modo escucha)"""
+        if self._stop_requested or not self.mbot:
+            return
+        # Solo asegurarse que esté parado
+        self.mbot.doMove(0, 0)
+
     def _simple_leds(self, led_pattern):
         """LEDs simples"""
         if self._stop_requested or not self.mbot:
@@ -166,10 +222,47 @@ class MBotController:
                     self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
                     time.sleep(0.5)
 
+            elif led_pattern == "flash_multicolor":
+                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
+                for _ in range(3):  # 3 cycles of flashing
+                    for color in colors:
+                        if self._stop_requested:
+                            break
+                        self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+                        self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+                        time.sleep(0.2)
+
             elif led_pattern == "blue_pulse":
                 self.mbot.doRGBLedOnBoard(0, 0, 0, 255)
                 self.mbot.doRGBLedOnBoard(1, 0, 0, 255)
                 time.sleep(1)
+
+            elif led_pattern == "blue_breathing":
+                # Efecto de "respiración" azul
+                for intensity in [50, 100, 150, 255, 150, 100, 50]:
+                    if self._stop_requested:
+                        break
+                    self.mbot.doRGBLedOnBoard(0, 0, 0, intensity)
+                    self.mbot.doRGBLedOnBoard(1, 0, 0, intensity)
+                    time.sleep(0.3)
+
+            elif led_pattern == "yellow_blink":
+                # Parpadeo amarillo (confusión)
+                for _ in range(6):
+                    if self._stop_requested:
+                        break
+                    self.mbot.doRGBLedOnBoard(0, 255, 255, 0)
+                    self.mbot.doRGBLedOnBoard(1, 255, 255, 0)
+                    time.sleep(0.2)
+                    self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                    self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+                    time.sleep(0.2)
+
+            elif led_pattern == "red_dim":
+                # Rojo tenue (tristeza)
+                self.mbot.doRGBLedOnBoard(0, 80, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 80, 0, 0)
+                time.sleep(1.5)
 
             elif led_pattern == "white_steady":
                 self.mbot.doRGBLedOnBoard(0, 255, 255, 255)
@@ -196,6 +289,29 @@ class MBotController:
                 if not self._stop_requested:
                     time.sleep(0.3)
                     self.mbot.doBuzzer(659, 200)  # Mi
+
+            elif sound_type == "beep_fast":
+                # Pitidos rápidos de emoción
+                frequencies = [523, 659, 784, 1047]  # Do, Mi, Sol, Do alto
+                for freq in frequencies:
+                    if self._stop_requested:
+                        break
+                    self.mbot.doBuzzer(freq, 150)
+                    time.sleep(0.1)
+
+            elif sound_type == "beep_confused":
+                # Sonido de confusión (tonos discordantes)
+                self.mbot.doBuzzer(400, 300)
+                if not self._stop_requested:
+                    time.sleep(0.1)
+                    self.mbot.doBuzzer(300, 300)
+
+            elif sound_type == "beep_sad":
+                # Sonido triste (tono descendente)
+                self.mbot.doBuzzer(523, 400)  # Do
+                if not self._stop_requested:
+                    time.sleep(0.2)
+                    self.mbot.doBuzzer(392, 400)  # Sol bajo
 
             elif sound_type == "beep_low":
                 self.mbot.doBuzzer(200, 300)
