@@ -99,12 +99,6 @@ try:
     print('✅ PySerial: OK')
 except ImportError:
     print('❌ PySerial: FALLO')
-
-try:
-    import numpy
-    print('✅ NumPy: OK')
-except ImportError:
-    print('❌ NumPy: FALLO')
 "
 
 echo ""

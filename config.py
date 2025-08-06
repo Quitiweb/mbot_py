@@ -1,5 +1,8 @@
 # Configuración del Asistente mBot
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # OpenAI API Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "tu-api-key-aqui")

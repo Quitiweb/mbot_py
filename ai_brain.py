@@ -1,6 +1,4 @@
 import openai
-import re
-import json
 from config import *
 
 class AIBrain:
