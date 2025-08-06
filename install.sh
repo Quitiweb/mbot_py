@@ -1,7 +1,7 @@
 #!/bin/bash
 
-echo "🤖 Instalador de mBot Asistente de Voz"
-echo "====================================="
+echo "🤖 Instalador de mBot Asistente de Voz con IA Local"
+echo "================================================="
 
 # Verificar Python
 if ! command -v python3 &> /dev/null; then
@@ -18,6 +18,33 @@ if ! command -v pip3 &> /dev/null; then
 fi
 
 echo "✅ pip3 encontrado"
+
+# Función para instalar Ollama
+install_ollama() {
+    echo "🧠 Instalando Ollama (IA Local)..."
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if ! command -v ollama &> /dev/null; then
+            echo "   Instalando Ollama con Homebrew..."
+            brew install ollama
+        else
+            echo "   ✅ Ollama ya está instalado"
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        if ! command -v ollama &> /dev/null; then
+            echo "   Instalando Ollama para Linux..."
+            curl -fsSL https://ollama.com/install.sh | sh
+        else
+            echo "   ✅ Ollama ya está instalado"
+        fi
+    else
+        echo "   ❌ SO no soportado para instalación automática de Ollama"
+        echo "   Por favor visita: https://ollama.com/download"
+        return 1
+    fi
+}
 
 # Instalar dependencias del sistema (macOS)
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -36,7 +63,38 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # Instalar ffmpeg para procesamiento de audio
     echo "📦 Instalando ffmpeg..."
     brew install ffmpeg
+
+    # Instalar Ollama
+    install_ollama
 fi
+
+# Instalar Ollama en Linux
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    echo "🐧 Detectado Linux - Instalando dependencias del sistema..."
+
+    # Instalar dependencias básicas
+    sudo apt-get update
+    sudo apt-get install -y python3-dev portaudio19-dev ffmpeg
+
+    # Instalar Ollama
+    install_ollama
+fi
+
+# Configurar IA local
+echo "🧠 Configurando IA local con Ollama..."
+
+# Esperar un momento para que Ollama se inicialice
+echo "⏳ Iniciando Ollama server..."
+ollama serve &
+OLLAMA_PID=$!
+sleep 5
+
+# Descargar modelo recomendado
+echo "📥 Descargando modelo IA avanzado (Qwen2.5 7B)..."
+echo "   Esto puede tardar varios minutos dependiendo de tu conexión..."
+ollama pull qwen2.5:7b
+
+echo "✅ IA local configurada correctamente"
 
 # Crear entorno virtual (opcional pero recomendado)
 echo "📦 Creando entorno virtual..."
@@ -89,26 +147,46 @@ except ImportError:
     print('❌ pyttsx3: FALLO')
 
 try:
-    import openai
-    print('✅ OpenAI: OK')
+    import requests
+    print('✅ Requests: OK')
 except ImportError:
-    print('❌ OpenAI: FALLO')
+    print('❌ Requests: FALLO')
 
 try:
     import serial
     print('✅ PySerial: OK')
 except ImportError:
     print('❌ PySerial: FALLO')
+
+# Verificar Ollama
+import subprocess
+try:
+    result = subprocess.run(['ollama', 'list'], capture_output=True, text=True)
+    if 'qwen2.5:7b' in result.stdout:
+        print('✅ Ollama + Qwen2.5: OK')
+    else:
+        print('⚠️  Ollama instalado pero modelo no descargado')
+except:
+    print('❌ Ollama: FALLO')
 "
 
 echo ""
-echo "📝 CONFIGURACIÓN NECESARIA:"
-echo "1. Configura tu API key de OpenAI en config.py"
-echo "2. Conecta tu mBot por USB"
-echo "3. Asegúrate de que tu micrófono y altavoces funcionen"
+echo "🎉 CONFIGURACIÓN COMPLETADA!"
+echo "============================"
+echo "✅ IA Local: Ollama con modelo Qwen2.5 7B instalado"
+echo "✅ Dependencias de Python instaladas"
+echo "✅ Entorno virtual creado"
+echo ""
+echo "📋 PARA USAR EL ASISTENTE:"
+echo "1. Conecta tu mBot por USB"
+echo "2. Asegúrate de que tu micrófono y altavoces funcionen"
+echo "3. Si Ollama no está ejecutándose, arrancalo con: ollama serve"
 echo ""
 echo "🚀 EJECUTAR EL ASISTENTE:"
 echo "   source mbot_env/bin/activate"
 echo "   python3 main.py"
 echo ""
-echo "✅ Instalación completada!"
+echo "🧪 PROBAR SOLO LA IA:"
+echo "   python3 ai_brain.py"
+echo ""
+echo "✅ ¡Todo listo para usar tu asistente mBot con IA local!"

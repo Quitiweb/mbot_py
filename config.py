@@ -7,6 +7,11 @@ load_dotenv()
 # OpenAI API Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "tu-api-key-aqui")
 
+# Ollama Configuration (IA Local)
+OLLAMA_URL = "http://localhost:11434/api/generate"
+OLLAMA_MODEL_NAME = "qwen2.5:7b"
+AI_BACKEND = "ollama"  # "openai" o "ollama"
+
 # Audio Configuration
 SAMPLE_RATE = 16000
 CHUNK_SIZE = 1024

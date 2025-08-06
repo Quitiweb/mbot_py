@@ -3,4 +3,5 @@ openai
 pyaudio
 SpeechRecognition
 pyttsx3
-dotenv
+python-dotenv
+requests

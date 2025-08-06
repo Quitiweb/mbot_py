@@ -1,10 +1,12 @@
-from openai import OpenAI
+import requests
+import json
 from config import *
 
 class AIBrain:
     def __init__(self):
-        # Configurar OpenAI (nueva sintaxis v1.0+)
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        # Configurar Ollama local
+        self.ollama_url = OLLAMA_URL
+        self.model_name = OLLAMA_MODEL_NAME
 
         # Historial de conversación
         self.conversation_history = [
@@ -42,10 +44,25 @@ class AIBrain:
 
     def _check_direct_command(self, text):
         """Verifica si el texto contiene un comando directo"""
-        text_lower = text.lower()
+        text_lower = text.lower().strip()
 
+        # Para comandos específicos como "para", requerir que sea el comando principal
+        if "para" in text_lower:
+            # Verificar si es realmente un comando de parar
+            if (text_lower.startswith("para") or
+                text_lower.endswith("para") or
+                text_lower in ["para", "para ya", "para ahora", "para inmediatamente"]):
+                return "stop"
+
+        # Para otros comandos, usar detección normal
         for spanish_cmd, english_cmd in DIRECT_COMMANDS.items():
-            if spanish_cmd in text_lower:
+            if spanish_cmd == "para":  # Ya lo manejamos arriba
+                continue
+            # Verificar si es una palabra completa
+            if (f" {spanish_cmd} " in f" {text_lower} " or
+                text_lower.startswith(f"{spanish_cmd} ") or
+                text_lower.endswith(f" {spanish_cmd}") or
+                text_lower == spanish_cmd):
                 return english_cmd
         return None
 
@@ -73,33 +90,60 @@ class AIBrain:
         }
 
     def _get_chatgpt_response(self, user_text):
-        """Obtiene respuesta de ChatGPT"""
+        """Obtiene respuesta de Ollama (IA local)"""
         try:
             # Añadir mensaje del usuario al historial
             self.conversation_history.append({"role": "user", "content": user_text})
 
-            # Llamar a la API de OpenAI (nueva sintaxis v1.0+)
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=self.conversation_history,
-                max_tokens=150,
-                temperature=0.7
-            )
+            # Crear el prompt con el contexto de la conversación
+            prompt = f"{ROBOT_PERSONALITY}\n\n"
+            for msg in self.conversation_history[-5:]:  # Últimos 5 mensajes para contexto
+                if msg["role"] == "system":
+                    continue
+                elif msg["role"] == "user":
+                    prompt += f"Usuario: {msg['content']}\n"
+                elif msg["role"] == "assistant":
+                    prompt += f"mBot: {msg['content']}\n"
 
-            ai_response = response.choices[0].message.content.strip()
+            prompt += "mBot:"
 
-            # Añadir respuesta al historial
-            self.conversation_history.append({"role": "assistant", "content": ai_response})
+            # Llamar a Ollama
+            payload = {
+                "model": self.model_name,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.7,
+                    "max_tokens": 150
+                }
+            }
 
-            # Mantener historial limitado
-            if len(self.conversation_history) > 10:
-                # Mantener system message y últimos 8 mensajes
-                self.conversation_history = [self.conversation_history[0]] + self.conversation_history[-8:]
+            response = requests.post(self.ollama_url, json=payload, timeout=30)
 
-            return ai_response
+            if response.status_code == 200:
+                ai_response = response.json().get("response", "").strip()
 
+                # Añadir respuesta al historial
+                self.conversation_history.append({"role": "assistant", "content": ai_response})
+
+                # Mantener historial limitado
+                if len(self.conversation_history) > 10:
+                    # Mantener system message y últimos 8 mensajes
+                    self.conversation_history = [self.conversation_history[0]] + self.conversation_history[-8:]
+
+                return ai_response
+            else:
+                print(f"❌ Error de Ollama: {response.status_code} - {response.text}")
+                return "Lo siento, tengo un pequeño problema técnico. ¿Puedes repetir?"
+
+        except requests.exceptions.Timeout:
+            print("❌ Timeout en Ollama")
+            return "Disculpa, estoy pensando muy lentamente. ¿Puedes repetir?"
+        except requests.exceptions.ConnectionError:
+            print("❌ No se puede conectar a Ollama")
+            return "Lo siento, no puedo procesar tu mensaje ahora. ¿Está Ollama ejecutándose?"
         except Exception as e:
-            print(f"❌ Error con ChatGPT: {e}")
+            print(f"❌ Error con Ollama: {e}")
             return "Lo siento, tengo un pequeño problema técnico. ¿Puedes repetir?"
 
     def _detect_emotion(self, text):

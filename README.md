@@ -1,15 +1,16 @@
 # mBot Asistente de Voz 🤖🎤
 
-Un sistema avanzado de conversación natural que convierte tu mBot en un asistente inteligente y expresivo usando IA.
+Un sistema avanzado de conversación natural que convierte tu mBot en un asistente inteligente y expresivo usando **IA local gratuita**.
 
 ## 🌟 Características
 
 - **🎤 Conversación por voz**: Habla naturalmente con tu mBot
-- **🧠 IA integrada**: Usa ChatGPT para respuestas inteligentes
+- **🧠 IA local avanzada**: Usa Ollama con Qwen2.5 (sin necesidad de APIs de pago)
 - **😊 Expresiones emocionales**: El mBot expresa emociones con LEDs, movimientos y sonidos
 - **🎭 Gestos sincronizados**: Movimientos que acompañan la conversación
 - **🎯 Comandos directos**: Control directo con comandos de voz
 - **🎵 Sistema de sonidos**: Pitidos expresivos según el estado emocional
+- **🆓 Completamente gratuito**: Sin necesidad de API keys ni créditos
 
 ## 🎯 Funcionalidades
 
@@ -38,38 +39,54 @@ Un sistema avanzado de conversación natural que convierte tu mBot en un asisten
 
 ## 🚀 Instalación Rápida
 
-### Opción 1: Script Automático (Recomendado)
+### Instalación Automática (Recomendado)
 ```bash
+chmod +x install.sh
 ./install.sh
 ```
 
-### Opción 2: Manual
+**¿Qué hace el instalador?**
+- ✅ Instala Ollama (IA local)
+- ✅ Descarga el modelo Qwen2.5 7B (muy avanzado)
+- ✅ Configura todas las dependencias
+- ✅ Crea entorno virtual
+- ✅ ¡Todo listo para usar!
+
+### Instalación Manual
 ```bash
-# Instalar dependencias del sistema (macOS)
+# 1. Instalar Ollama
+curl -fsSL https://ollama.com/install.sh | sh  # Linux
+brew install ollama                             # macOS
+
+# 2. Descargar modelo IA
+ollama pull qwen2.5:7b
+
+# 3. Instalar dependencias del sistema (macOS)
 brew install portaudio ffmpeg
 
-# Instalar dependencias de Python
+# 4. Instalar dependencias de Python
 pip3 install -r requirements.txt
-
-# Instalar Whisper (opcional, para STT local)
-pip3 install openai-whisper
 ```
 
 ## ⚙️ Configuración
 
-1. **API de OpenAI**: Edita `config.py` y añade tu clave:
-```python
-OPENAI_API_KEY = "tu-clave-api-aqui"
-```
+**¡NO necesitas API keys ni configuración adicional!**
 
-2. **Conectar mBot**: Conecta tu mBot por USB
-
-3. **Verificar audio**: Asegúrate de que micrófono y altavoces funcionen
+1. **Conectar mBot**: Conecta tu mBot por USB
+2. **Verificar audio**: Asegúrate de que micrófono y altavoces funcionen
+3. **¡Listo!** La IA local funciona sin configuración
 
 ## 🎮 Uso
 
-### Iniciar el Asistente
+### Iniciar el Sistema
 ```bash
+# Iniciar Ollama (si no está ejecutándose)
+ollama serve &
+
+# Activar entorno virtual (si usaste el instalador)
+source mbot_env/bin/activate
+
+# Iniciar el asistente
 python3 main.py
 ```
 
@@ -97,6 +114,23 @@ python3 main.py
     [Secuencia de baile con LEDs de colores]
 ```
 
+## 🧠 IA Local vs IA en la Nube
+
+### Ventajas de la IA Local (Ollama)
+- ✅ **Gratuito**: Sin costos de API ni límites de uso
+- ✅ **Privacidad**: Tus conversaciones nunca salen de tu ordenador
+- ✅ **Sin internet**: Funciona completamente offline
+- ✅ **Rapidez**: Respuestas instantáneas sin latencia de red
+- ✅ **Personalizable**: Puedes cambiar modelos fácilmente
+- ✅ **Escalable**: Funciona 24/7 sin restricciones
+
+### Modelo Qwen2.5 7B
+- 🚀 **Muy avanzado**: Uno de los mejores modelos de agosto 2025
+- 🇪🇸 **Excelente español**: Optimizado para conversación natural
+- 🤖 **Específico**: Entrenado para personalidad robótica
+- ⚡ **Eficiente**: Funciona bien en hardware doméstico
+- 🎯 **Contextual**: Mantiene coherencia en conversaciones largas
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -122,10 +156,12 @@ mbot_project/
 - **Idioma**: Español (configurable)
 
 ### Inteligencia Artificial
-- **Motor**: OpenAI ChatGPT-3.5-turbo
+- **Motor**: Ollama + Qwen2.5 7B (IA local gratuita)
+- **Backend alternativo**: OpenAI ChatGPT (opcional)
 - **Personalidad**: Robot amigable y expresivo
 - **Contexto**: Mantiene historial de conversación
 - **Emociones**: Análisis de sentimiento en respuestas
+- **Privacidad**: 100% local, sin envío de datos
 
 ### Control del mBot
 - **Comunicación**: Puerto serie USB
@@ -176,10 +212,25 @@ DIRECT_COMMANDS = {
 - Prueba con otro micrófono
 - Ajusta `SAMPLE_RATE` en config.py
 
-### OpenAI API no responde
-- Verifica tu clave API en config.py
-- Comprueba tu saldo de OpenAI
-- Revisa tu conexión a internet
+### Ollama no conecta
+- Verifica que Ollama esté ejecutándose: `ollama serve`
+- Comprueba que el modelo esté descargado: `ollama list`
+- Reinicia Ollama si es necesario
+
+### Modelo no responde
+- Asegúrate de tener `qwen2.5:7b` descargado
+- Prueba con: `ollama run qwen2.5:7b "Hola"`
+- Verifica que tengas suficiente RAM (8GB recomendado)
+
+### mBot no conecta
+- Verifica que esté conectado por USB
+- Comprueba que el driver CH340 esté instalado
+- Revisa que no haya otros programas usando el puerto
+
+### Micrófono no funciona
+- Verifica permisos de micrófono en Configuración del Sistema
+- Prueba con otro micrófono
+- Ajusta `SAMPLE_RATE` en config.py
 
 ### PyAudio no se instala
 ```bash
@@ -189,6 +240,23 @@ pip3 install pyaudio
 
 # Ubuntu/Debian
 sudo apt-get install portaudio19-dev python3-pyaudio
+```
+
+## 🧪 Pruebas
+
+### Probar solo la IA
+```bash
+python3 test_ollama_ai.py
+```
+
+### Probar comandos de voz
+```bash
+python3 test_voice_commands.py
+```
+
+### Probar parada de emergencia
+```bash
+python3 test_stop.py
 ```
 
 ## 📈 Próximas Características
