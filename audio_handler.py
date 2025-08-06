@@ -1,5 +1,3 @@
-import pyaudio
-import wave
 import speech_recognition as sr
 import pyttsx3
 import threading
@@ -16,12 +14,74 @@ class AudioHandler:
         self.tts_engine.setProperty('rate', TTS_VOICE_RATE)
         self.tts_engine.setProperty('volume', TTS_VOICE_VOLUME)
 
+        # Configurar voz española
+        self._setup_spanish_voice()
+
         # Estado
         self.is_listening = False
         self.is_speaking = False
 
         # Calibrar microfono
         self._calibrate_microphone()
+
+    def _setup_spanish_voice(self):
+        """Configura la voz 97 Mónica (español España)"""
+        voices = self.tts_engine.getProperty('voices')
+
+        # Buscar específicamente la voz Mónica por ID o nombre
+        monica_voice = None
+
+        print(f"🔍 Buscando voz Mónica (ID: {TTS_VOICE_ID if 'TTS_VOICE_ID' in globals() else '97'})...")
+
+        # Método 1: Buscar por ID específico
+        if hasattr(self, 'TTS_VOICE_ID') or 'TTS_VOICE_ID' in globals():
+            voice_id = globals().get('TTS_VOICE_ID', 97)
+            if len(voices) > voice_id:
+                monica_voice = voices[voice_id].id
+                print(f"🎤 Encontrada voz por ID {voice_id}: {voices[voice_id].name}")
+
+        # Método 2: Buscar por nombre exacto "Monica" o "Mónica"
+        if not monica_voice:
+            for voice in voices:
+                if any(name in voice.name for name in ["Monica", "Mónica"]):
+                    monica_voice = voice.id
+                    print(f"🎤 Encontrada voz Mónica: {voice.name}")
+                    break
+
+        # Método 3: Buscar por patrones específicos de español España
+        if not monica_voice:
+            preferred_patterns = [
+                "es_ES",
+                "Spanish (Spain)",
+                "Español (España)",
+                "com.apple.ttsbundle.Monica-compact",
+                "com.apple.voice.compact.es-ES.Monica"
+            ]
+
+            for pattern in preferred_patterns:
+                for voice in voices:
+                    if pattern in voice.id or pattern in voice.name:
+                        monica_voice = voice.id
+                        print(f"🎤 Encontrada voz española por patrón '{pattern}': {voice.name}")
+                        break
+                if monica_voice:
+                    break
+
+        # Aplicar la voz si se encontró
+        if monica_voice:
+            try:
+                self.tts_engine.setProperty('voice', monica_voice)
+                print("✅ Voz Mónica configurada correctamente")
+            except Exception as e:
+                print(f"⚠️  Error configurando voz Mónica: {e}")
+                print("   Usando voz por defecto")
+        else:
+            print("❌ No se encontró la voz Mónica")
+            print("   Voces disponibles:")
+            for i, voice in enumerate(voices[:10]):  # Mostrar solo las primeras 10
+                print(f"     {i}: {voice.name} ({voice.id})")
+            print("   ...")
+            print("   Para instalar más voces: Configuración > Accesibilidad > Contenido Hablado")
 
     def _calibrate_microphone(self):
         """Calibra el micrófono para ruido ambiente"""

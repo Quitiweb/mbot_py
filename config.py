@@ -17,6 +17,8 @@ CHANNELS = 1  # Mono
 TTS_ENGINE = "pyttsx3"  # o "edge-tts"
 TTS_VOICE_RATE = 180  # Velocidad de habla
 TTS_VOICE_VOLUME = 0.8  # Volumen (0.0 a 1.0)
+TTS_PREFERRED_VOICE = "Monica"  # Voz preferida (Mónica - español España)
+TTS_VOICE_ID = 97  # ID específico de la voz Mónica
 
 # mBot Configuration
 MBOT_PORT = None  # None para auto-detectar

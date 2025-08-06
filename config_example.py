@@ -1,13 +1,12 @@
 # Ejemplo de configuración para mBot Asistente de Voz
 # Copia este archivo como config.py y personaliza los valores
 
-import os
-
 # =============================================================================
 # CONFIGURACIÓN DE OPENAI
 # =============================================================================
 # Obtén tu clave API en: https://platform.openai.com/api-keys
-OPENAI_API_KEY = "sk-..."  # Reemplaza con tu clave real
+from config import OPENAI_API_KEY
+
 
 # =============================================================================
 # CONFIGURACIÓN DE AUDIO
@@ -23,6 +22,8 @@ CHANNELS = 1              # Canales de audio (1 = mono)
 TTS_ENGINE = "pyttsx3"    # Motor TTS: "pyttsx3", "edge-tts"
 TTS_VOICE_RATE = 180      # Velocidad de habla (palabras por minuto)
 TTS_VOICE_VOLUME = 0.8    # Volumen (0.0 a 1.0)
+TTS_PREFERRED_VOICE = "Monica"  # Voz preferida (Mónica - español España)
+TTS_VOICE_ID = 97         # ID específico de la voz Mónica
 
 # =============================================================================
 # CONFIGURACIÓN MBOT
@@ -69,7 +70,7 @@ Ejemplos de cómo debes responder:
 GESTURES = {
     # Emociones positivas
     "happy": {
-        "movement": "bounce",           # Pequeños saltos
+        "movement": "bounce",          # Pequeños saltos
         "leds": "rainbow",             # LEDs arcoíris
         "sound": "beep_happy"          # Sonidos alegres
     },
@@ -101,13 +102,13 @@ GESTURES = {
     },
 
     "sad": {
-        "movement": "back_away",       # Retroceder
+        "movement": "back_away",      # Retroceder
         "leds": "red_dim",            # LEDs rojos tenues
         "sound": "beep_sad"           # Sonidos tristes
     },
 
     "neutral": {
-        "movement": "slight_move",     # Movimiento muy sutil
+        "movement": "slight_move",    # Movimiento muy sutil
         "leds": "white_steady",       # LEDs blancos constantes
         "sound": None                 # Sin sonido
     }
@@ -204,10 +205,10 @@ ERROR_MESSAGES = {
 # CONFIGURACIÓN EXPERIMENTAL
 # =============================================================================
 # Estas características están en desarrollo
-ENABLE_WHISPER_LOCAL = False    # Usar Whisper local en lugar de Google STT
-ENABLE_EMOTION_LEARNING = False # Aprender emociones del usuario
-ENABLE_VOICE_CLONING = False    # Clonar voz del usuario
-ENABLE_CAMERA_INPUT = False     # Usar cámara para gestos
+ENABLE_WHISPER_LOCAL = False     # Usar Whisper local en lugar de Google STT
+ENABLE_EMOTION_LEARNING = False  # Aprender emociones del usuario
+ENABLE_VOICE_CLONING = False     # Clonar voz del usuario
+ENABLE_CAMERA_INPUT = False      # Usar cámara para gestos
 
 # =============================================================================
 # VALIDACIÓN DE CONFIGURACIÓN
@@ -216,7 +217,7 @@ def validate_config():
     """Valida que la configuración sea correcta"""
     issues = []
 
-    if OPENAI_API_KEY == "sk-..." or len(OPENAI_API_KEY) < 20:
+    if len(OPENAI_API_KEY) < 20:
         issues.append("❌ OPENAI_API_KEY no configurada correctamente")
 
     if SAMPLE_RATE not in [8000, 16000, 22050, 44100, 48000]:
