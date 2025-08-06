@@ -1,16 +1,28 @@
 import threading
 import time
 import random
-from mbot_py.lib.mBot import mBot
+from mbot_enhanced import MBotEnhanced
 from config import *
 
 class MBotController:
-    def __init__(self):
+    def __init__(self, connection_type="auto", bluetooth_address=None):
+        """
+        Inicializa el controlador mBot con soporte Bluetooth y USB
+
+        Args:
+            connection_type: "auto", "usb", "bluetooth"
+            bluetooth_address: Dirección MAC del mBot (opcional)
+        """
         try:
-            self.mbot = mBot()
-            print("✅ mBot conectado correctamente")
+            print(f"🔗 Intentando conectar mBot ({connection_type})...")
+            self.mbot = MBotEnhanced(connection_type, bluetooth_address)
+            print(f"✅ mBot conectado correctamente via {self.mbot.get_connection_info()}")
         except Exception as e:
             print(f"❌ Error conectando mBot: {e}")
+            print("💡 Sugerencias:")
+            print("   - Para Bluetooth: Asegúrate de que el mBot esté emparejado")
+            print("   - Para USB: Verifica la conexión USB y drivers CH340")
+            print("   - Prueba con: python3 test_connection.py")
             self.mbot = None
 
         # Estado del robot

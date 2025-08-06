@@ -64,6 +64,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "📦 Instalando ffmpeg..."
     brew install ffmpeg
 
+    # Instalar dependencias de Bluetooth
+    echo "🔵 Instalando soporte Bluetooth..."
+    # En macOS, Bluetooth suele estar integrado
+    echo "✅ Soporte Bluetooth disponible en macOS"
+
     # Instalar Ollama
     install_ollama
 fi
@@ -75,6 +80,10 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Instalar dependencias básicas
     sudo apt-get update
     sudo apt-get install -y python3-dev portaudio19-dev ffmpeg
+
+    # Instalar dependencias de Bluetooth
+    echo "🔵 Instalando soporte Bluetooth..."
+    sudo apt-get install -y bluetooth libbluetooth-dev
 
     # Instalar Ollama
     install_ollama

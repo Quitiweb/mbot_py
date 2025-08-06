@@ -72,9 +72,35 @@ pip3 install -r requirements.txt
 
 **¡NO necesitas API keys ni configuración adicional!**
 
-1. **Conectar mBot**: Conecta tu mBot por USB
+1. **Conectar mBot**: Conecta tu mBot por **Bluetooth** (recomendado) o USB
 2. **Verificar audio**: Asegúrate de que micrófono y altavoces funcionen
 3. **¡Listo!** La IA local funciona sin configuración
+
+### 🔵 Conexión Bluetooth (Recomendado)
+
+**Ventajas del Bluetooth:**
+- ✅ **Inalámbrico**: El mBot puede moverse libremente
+- ✅ **Más divertido**: Sin cables que limiten el movimiento
+- ✅ **Profesional**: Experiencia de robot autónomo real
+
+**Configuración Bluetooth:**
+1. **Emparejar mBot**: Ve a Configuración Bluetooth y empareja tu mBot
+2. **Ejecutar**: `python3 main.py` (conecta automáticamente por Bluetooth)
+3. **¡Listo!** El sistema detecta y conecta automáticamente
+
+### 🔌 Conexión USB (Alternativa)
+
+Si prefieres USB o tienes problemas con Bluetooth:
+1. **Conectar USB**: Conecta el mBot por cable USB
+2. **Forzar USB**: Edita `config.py` → `MBOT_CONNECTION_TYPE = "usb"`
+3. **Ejecutar**: `python3 main.py`
+
+### 🧪 Probar Conectividad
+
+```bash
+# Probar ambos tipos de conexión
+python3 test_connection.py
+```
 
 ## 🎮 Uso
 

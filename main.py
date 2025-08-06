@@ -22,7 +22,10 @@ class MBotAssistant:
         # Inicializar componentes
         self.audio_handler = AudioHandler()
         self.ai_brain = AIBrain()
-        self.mbot_controller = MBotController()
+        self.mbot_controller = MBotController(
+            connection_type=MBOT_CONNECTION_TYPE,
+            bluetooth_address=MBOT_BLUETOOTH_ADDRESS
+        )
         self.gesture_engine = GestureEngine(self.mbot_controller)
 
         # Estado del sistema

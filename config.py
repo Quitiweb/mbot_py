@@ -26,7 +26,9 @@ TTS_PREFERRED_VOICE = "Monica"  # Voz preferida (Mónica - español España)
 TTS_VOICE_ID = 97  # ID específico de la voz Mónica
 
 # mBot Configuration
-MBOT_PORT = None  # None para auto-detectar
+MBOT_CONNECTION_TYPE = "auto"  # "auto", "bluetooth", "usb"
+MBOT_BLUETOOTH_ADDRESS = None  # Dirección MAC del mBot (opcional, None para auto-detectar)
+MBOT_PORT = None  # Puerto USB específico (None para auto-detectar)
 MBOT_BAUDRATE = 115200
 
 # AI Personality
