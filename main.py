@@ -11,7 +11,7 @@ import sys
 from audio_handler import AudioHandler
 from ai_brain import AIBrain
 from mbot_controller import MBotController
-from gesture_engine import GestureEngine
+from gesture_engine_fixed import GestureEngineFixed
 from config import *
 
 class MBotAssistant:
@@ -26,7 +26,7 @@ class MBotAssistant:
             connection_type=MBOT_CONNECTION_TYPE,
             bluetooth_address=MBOT_BLUETOOTH_ADDRESS
         )
-        self.gesture_engine = GestureEngine(self.mbot_controller)
+        self.gesture_engine = GestureEngineFixed(self.mbot_controller)
 
         # Estado del sistema
         self.is_running = False
@@ -221,7 +221,7 @@ class MBotAssistant:
 
         # Detener componentes
         if hasattr(self, 'gesture_engine'):
-            self.gesture_engine.emergency_stop()
+            self.gesture_engine.stop_all()
 
         if hasattr(self, 'audio_handler'):
             self.audio_handler.stop_speaking()

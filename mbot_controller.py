@@ -1,7 +1,7 @@
 import threading
 import time
 import random
-from mbot_final import MBotFinal
+from mbot_original_protocol import MBotOriginalProtocol
 from config import *
 
 class MBotController:
@@ -15,7 +15,7 @@ class MBotController:
         """
         try:
             print(f"🔗 Intentando conectar mBot ({connection_type})...")
-            self.mbot = MBotFinal(connection_type)
+            self.mbot = MBotOriginalProtocol(connection_type)
             print(f"✅ mBot conectado correctamente via {self.mbot.connection_type}")
         except Exception as e:
             print(f"❌ Error conectando mBot: {e}")
@@ -575,19 +575,32 @@ class MBotController:
         self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
     def stop_gesture(self):
-        """Detiene el gesto actual inmediatamente"""
+        """Detiene el gesto actual inmediatamente - VERSIÓN MEJORADA"""
         print("🛑 Deteniendo gesto actual...")
 
         # Marcar que debe detenerse
         self._stop_requested = True
         self.is_performing_gesture = False
 
-        # Detener movimiento inmediatamente
+        # Detener con el método mejorado
         if self.mbot:
-            self.mbot.doMove(0, 0)
-            self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
-            self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
-            print("✅ mBot detenido")
+            if hasattr(self.mbot, 'forceStop'):
+                self.mbot.forceStop()
+            else:
+                self.mbot.doMove(0, 0)
+            
+            # Limpieza adicional
+            if hasattr(self.mbot, 'emergencyCleanup'):
+                self.mbot.emergencyCleanup()
+            else:
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+            
+            print("✅ mBot detenido con método mejorado")
+
+    def stop_current_gesture(self):
+        """Alias para stop_gesture - compatibilidad"""
+        self.stop_gesture()
 
     def cleanup(self):
         """Limpia recursos del mBot"""
