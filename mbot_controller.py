@@ -340,7 +340,7 @@ class MBotController:
                 # (movimiento_izq, movimiento_der, led_r, led_g, led_b, buzzer_freq, duración)
                 (60, -60, 255, 0, 0, 523, 0.8),      # giro derecha + rojo + Do
                 (0, 0, 255, 100, 0, 0, 0.2),         # pausa
-                (-60, 60, 0, 255, 0, 587, 0.8),      # giro izquierda + verde + Re  
+                (-60, 60, 0, 255, 0, 587, 0.8),      # giro izquierda + verde + Re
                 (0, 0, 100, 255, 0, 0, 0.2),         # pausa
                 (80, 80, 0, 0, 255, 659, 0.6),       # adelante + azul + Mi
                 (0, 0, 0, 100, 255, 0, 0.2),         # pausa
@@ -355,35 +355,35 @@ class MBotController:
                 (-80, -80, 0, 255, 100, 523, 0.6),   # atrás + verde claro + Do
                 (0, 0, 255, 255, 255, 0, 0.3),       # pausa final
             ]
-            
+
             print("🎵 ¡Empezando la música y el baile!")
-            
+
             for i, (left, right, r, g, b, freq, duration) in enumerate(dance_steps):
                 if self._stop_requested:
                     break
-                    
+
                 print(f"🎶 Paso {i+1}: mov=({left},{right}), color=({r},{g},{b}), freq={freq}")
-                
+
                 try:
                     # 1. LEDs primero
                     self.mbot.doRGBLedOnBoard(0, r, g, b)
                     self.mbot.doRGBLedOnBoard(1, r, g, b)
-                    
+
                     # 2. Movimiento
                     self.mbot.doMove(left, right)
-                    
+
                     # 3. Sonido (solo si no es 0)
                     if freq > 0:
                         self.mbot.doBuzzer(freq, int(duration * 800))  # duración en ms
-                    
+
                     # 4. Esperar
                     time.sleep(duration)
-                    
+
                     # 5. Parar movimiento
                     self.mbot.doMove(0, 0)
-                    
+
                     print(f"✅ Paso {i+1} completado")
-                    
+
                 except Exception as e:
                     print(f"❌ Error en paso {i+1}: {e}")
                     # Forzar parada y continuar
@@ -392,7 +392,7 @@ class MBotController:
                     except:
                         pass
                     continue
-            
+
             # Gran final simple pero efectivo
             print("� ¡Gran final!")
             try:
@@ -400,18 +400,18 @@ class MBotController:
                 for i in range(8):
                     if self._stop_requested:
                         break
-                        
+
                     color = [255, 0, 0] if i % 2 == 0 else [0, 0, 255]
                     self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
                     self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
-                    
+
                     direction = 120 if i % 2 == 0 else -120
                     self.mbot.doMove(direction, -direction)
                     time.sleep(0.25)
-                
+
                 # Parada final
                 self.mbot.doMove(0, 0)
-                
+
                 # Acorde final
                 finale_notes = [523, 659, 784, 1047]  # Do, Mi, Sol, Do alto
                 for note in finale_notes:
@@ -419,13 +419,13 @@ class MBotController:
                         break
                     self.mbot.doBuzzer(note, 150)
                     time.sleep(0.1)
-                
+
                 # Nota final larga
                 self.mbot.doBuzzer(523, 800)  # Do final
-                
+
             except Exception as e:
                 print(f"❌ Error en gran final: {e}")
-            
+
             # Asegurar que todo esté parado
             self.mbot.doMove(0, 0)
             self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
