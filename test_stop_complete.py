@@ -8,14 +8,14 @@ from mbot_controller import MBotController
 def test_stop_scenarios():
     """Prueba diferentes escenarios de parada"""
     print("🤖 Probando escenarios de parada del mBot...")
-    
+
     controller = MBotController()
     if not controller.mbot:
         print("❌ No se pudo conectar al mBot")
         return False
-    
+
     print("✅ mBot conectado")
-    
+
     # Escenario 1: Movimiento básico y parada
     print("\\n📋 Escenario 1: Movimiento y parada básica")
     print("   ▶️  Moviendo adelante...")
@@ -24,7 +24,7 @@ def test_stop_scenarios():
     print("   🛑 Parando...")
     controller.execute_command("stop")
     time.sleep(2)
-    
+
     # Escenario 2: Giro y parada
     print("\\n📋 Escenario 2: Giro y parada")
     print("   🔄 Iniciando giro...")
@@ -33,7 +33,7 @@ def test_stop_scenarios():
     print("   🛑 Parando giro...")
     controller.execute_command("stop")
     time.sleep(2)
-    
+
     # Escenario 3: Baile y parada
     print("\\n📋 Escenario 3: Baile y parada")
     print("   💃 Iniciando baile...")
@@ -42,7 +42,7 @@ def test_stop_scenarios():
     print("   🛑 Parando baile...")
     controller.execute_command("stop")
     time.sleep(2)
-    
+
     # Escenario 4: Gesto y parada
     print("\\n📋 Escenario 4: Gesto emocional y parada")
     print("   😊 Iniciando gesto feliz...")
@@ -51,7 +51,7 @@ def test_stop_scenarios():
     print("   🛑 Parando gesto...")
     controller.stop_gesture()
     time.sleep(2)
-    
+
     # Escenario 5: Múltiples paradas seguidas
     print("\\n📋 Escenario 5: Múltiples paradas seguidas")
     controller.execute_command("forward")
@@ -60,7 +60,7 @@ def test_stop_scenarios():
     controller.execute_command("stop")  # Segunda parada
     controller.execute_command("stop")  # Tercera parada
     time.sleep(1)
-    
+
     print("\\n✅ Todos los escenarios completados")
     controller.cleanup()
     return True

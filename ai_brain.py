@@ -1,10 +1,10 @@
-import openai
+from openai import OpenAI
 from config import *
 
 class AIBrain:
     def __init__(self):
-        # Configurar OpenAI
-        openai.api_key = OPENAI_API_KEY
+        # Configurar OpenAI (nueva sintaxis v1.0+)
+        self.client = OpenAI(api_key=OPENAI_API_KEY)
 
         # Historial de conversación
         self.conversation_history = [
@@ -78,8 +78,8 @@ class AIBrain:
             # Añadir mensaje del usuario al historial
             self.conversation_history.append({"role": "user", "content": user_text})
 
-            # Llamar a la API de OpenAI
-            response = openai.ChatCompletion.create(
+            # Llamar a la API de OpenAI (nueva sintaxis v1.0+)
+            response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=self.conversation_history,
                 max_tokens=150,
