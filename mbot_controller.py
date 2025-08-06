@@ -329,36 +329,219 @@ class MBotController:
         self.mbot.doMove(0, 0)
 
     def perform_dance(self):
-        """Secuencia de baile"""
+        """Secuencia de baile simple pero espectacular (versión robusta)"""
         if not self.mbot:
             return
 
-        print("💃 ¡Iniciando baile!")
+        print("💃 ¡Iniciando baile espectacular!")
         try:
-            # Secuencia simple de baile
-            moves = [
-                (100, -100, 0.5),   # Giro derecha
-                (-100, 100, 0.5),   # Giro izquierda
-                (150, 150, 0.3),    # Adelante
-                (-100, -100, 0.3),  # Atrás
+            # Secuencia de baile robusta - basada en la versión que funciona
+            dance_steps = [
+                # (movimiento_izq, movimiento_der, led_r, led_g, led_b, buzzer_freq, duración)
+                (60, -60, 255, 0, 0, 523, 0.8),      # giro derecha + rojo + Do
+                (0, 0, 255, 100, 0, 0, 0.2),         # pausa
+                (-60, 60, 0, 255, 0, 587, 0.8),      # giro izquierda + verde + Re  
+                (0, 0, 100, 255, 0, 0, 0.2),         # pausa
+                (80, 80, 0, 0, 255, 659, 0.6),       # adelante + azul + Mi
+                (0, 0, 0, 100, 255, 0, 0.2),         # pausa
+                (-60, -60, 255, 255, 0, 698, 0.6),   # atrás + amarillo + Fa
+                (0, 0, 255, 255, 100, 0, 0.2),       # pausa
+                (80, -80, 255, 0, 255, 784, 0.8),    # giro + morado + Sol
+                (0, 0, 255, 255, 255, 0, 0.2),       # pausa
+                (-80, 80, 0, 255, 255, 880, 0.8),    # giro contrario + cian + La
+                (0, 0, 255, 0, 100, 0, 0.2),         # pausa
+                (100, 100, 255, 100, 0, 988, 0.6),   # adelante rápido + naranja + Si
+                (0, 0, 100, 255, 255, 0, 0.2),       # pausa
+                (-80, -80, 0, 255, 100, 523, 0.6),   # atrás + verde claro + Do
+                (0, 0, 255, 255, 255, 0, 0.3),       # pausa final
             ]
-
-            for left, right, duration in moves:
+            
+            print("🎵 ¡Empezando la música y el baile!")
+            
+            for i, (left, right, r, g, b, freq, duration) in enumerate(dance_steps):
                 if self._stop_requested:
                     break
-                self.mbot.doMove(left, right)
-                # LED aleatorio
-                color = random.choice([(255, 0, 0), (0, 255, 0), (0, 0, 255)])
-                self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
-                self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
-                time.sleep(duration)
-
+                    
+                print(f"🎶 Paso {i+1}: mov=({left},{right}), color=({r},{g},{b}), freq={freq}")
+                
+                try:
+                    # 1. LEDs primero
+                    self.mbot.doRGBLedOnBoard(0, r, g, b)
+                    self.mbot.doRGBLedOnBoard(1, r, g, b)
+                    
+                    # 2. Movimiento
+                    self.mbot.doMove(left, right)
+                    
+                    # 3. Sonido (solo si no es 0)
+                    if freq > 0:
+                        self.mbot.doBuzzer(freq, int(duration * 800))  # duración en ms
+                    
+                    # 4. Esperar
+                    time.sleep(duration)
+                    
+                    # 5. Parar movimiento
+                    self.mbot.doMove(0, 0)
+                    
+                    print(f"✅ Paso {i+1} completado")
+                    
+                except Exception as e:
+                    print(f"❌ Error en paso {i+1}: {e}")
+                    # Forzar parada y continuar
+                    try:
+                        self.mbot.doMove(0, 0)
+                    except:
+                        pass
+                    continue
+            
+            # Gran final simple pero efectivo
+            print("� ¡Gran final!")
+            try:
+                # Luces intermitentes con giros
+                for i in range(8):
+                    if self._stop_requested:
+                        break
+                        
+                    color = [255, 0, 0] if i % 2 == 0 else [0, 0, 255]
+                    self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+                    self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+                    
+                    direction = 120 if i % 2 == 0 else -120
+                    self.mbot.doMove(direction, -direction)
+                    time.sleep(0.25)
+                
+                # Parada final
+                self.mbot.doMove(0, 0)
+                
+                # Acorde final
+                finale_notes = [523, 659, 784, 1047]  # Do, Mi, Sol, Do alto
+                for note in finale_notes:
+                    if self._stop_requested:
+                        break
+                    self.mbot.doBuzzer(note, 150)
+                    time.sleep(0.1)
+                
+                # Nota final larga
+                self.mbot.doBuzzer(523, 800)  # Do final
+                
+            except Exception as e:
+                print(f"❌ Error en gran final: {e}")
+            
+            # Asegurar que todo esté parado
             self.mbot.doMove(0, 0)
             self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
             self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+            print("💃 ¡Baile completado!")
 
         except Exception as e:
-            print(f"❌ Error en baile: {e}")
+            print(f"❌ Error crítico en baile: {e}")
+            # Forzar parada en caso de error
+            try:
+                self.mbot.doMove(0, 0)
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+            except:
+                pass
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+
+    def _execute_dance_move(self, move_type, led_color):
+        """Ejecuta un movimiento específico de baile"""
+        if self._stop_requested or not self.mbot:
+            return
+
+        # Aplicar color de LEDs
+        self.mbot.doRGBLedOnBoard(0, led_color[0], led_color[1], led_color[2])
+        self.mbot.doRGBLedOnBoard(1, led_color[0], led_color[1], led_color[2])
+
+        # Ejecutar movimiento
+        if move_type == "wiggle":
+            # Pequeños movimientos de lado a lado
+            self.mbot.doMove(40, -40)
+            time.sleep(0.15)
+            self.mbot.doMove(-40, 40)
+            time.sleep(0.15)
+            self.mbot.doMove(0, 0)
+
+        elif move_type == "spin_right":
+            # Giro hacia la derecha
+            self.mbot.doMove(80, -80)
+
+        elif move_type == "spin_left":
+            # Giro hacia la izquierda
+            self.mbot.doMove(-80, 80)
+
+        elif move_type == "full_spin":
+            # Giro completo rápido
+            self.mbot.doMove(120, -120)
+
+        elif move_type == "forward":
+            # Avanzar con energía
+            self.mbot.doMove(100, 100)
+
+        elif move_type == "backward":
+            # Retroceder
+            self.mbot.doMove(-80, -80)
+
+        elif move_type == "back_forth":
+            # Adelante y atrás rápido
+            self.mbot.doMove(60, 60)
+            time.sleep(0.2)
+            self.mbot.doMove(-60, -60)
+            time.sleep(0.2)
+            self.mbot.doMove(0, 0)
+
+        elif move_type == "celebration":
+            # Movimiento de celebración
+            for _ in range(3):
+                self.mbot.doMove(100, -100)
+                time.sleep(0.1)
+                self.mbot.doMove(-100, 100)
+                time.sleep(0.1)
+            self.mbot.doMove(0, 0)
+
+        elif move_type == "final_pose":
+            # Pose final dramática
+            self.mbot.doMove(0, 0)  # Parar en pose
+
+        elif move_type == "pause":
+            # Pausa musical
+            self.mbot.doMove(0, 0)
+
+    def _grand_finale(self):
+        """Gran final espectacular"""
+        if self._stop_requested or not self.mbot:
+            return
+
+        # Secuencia de luces y sonidos finales
+        finale_colors = [
+            (255, 0, 0), (0, 255, 0), (0, 0, 255),
+            (255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 255, 255)
+        ]
+
+        finale_notes = [523, 659, 784, 1047]  # Acorde final
+
+        # Efectos de luces rápidos
+        for i in range(8):
+            if self._stop_requested:
+                break
+            color = finale_colors[i % len(finale_colors)]
+            self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+            self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+
+            # Giro rápido
+            self.mbot.doMove(150, -150)
+            time.sleep(0.1)
+
+        # Acorde final
+        for note in finale_notes:
+            if self._stop_requested:
+                break
+            self.mbot.doBuzzer(note, 200)
+            time.sleep(0.1)
+
+        # Nota final larga
+        self.mbot.doBuzzer(523, 1000)  # Do final largo
+        self.mbot.doMove(0, 0)  # Parar en pose final
 
     def perform_light_show(self):
         """Espectáculo de luces"""
