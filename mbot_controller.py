@@ -1,7 +1,7 @@
 import threading
 import time
 import random
-from mbot_enhanced import MBotEnhanced
+from mbot_final import MBotFinal
 from config import *
 
 class MBotController:
@@ -15,8 +15,8 @@ class MBotController:
         """
         try:
             print(f"🔗 Intentando conectar mBot ({connection_type})...")
-            self.mbot = MBotEnhanced(connection_type, bluetooth_address)
-            print(f"✅ mBot conectado correctamente via {self.mbot.get_connection_info()}")
+            self.mbot = MBotFinal(connection_type)
+            print(f"✅ mBot conectado correctamente via {self.mbot.connection_type}")
         except Exception as e:
             print(f"❌ Error conectando mBot: {e}")
             print("💡 Sugerencias:")
