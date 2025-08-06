@@ -17,6 +17,7 @@ class MBotController:
         self.current_gesture = None
         self.is_performing_gesture = False
         self.gesture_thread = None
+        self._stop_requested = False  # Flag para parar gestos
 
     def execute_command(self, command):
         """Ejecuta un comando directo en el mBot"""
@@ -47,8 +48,17 @@ class MBotController:
                 self.mbot.doMove(0, 0)
 
             elif command == "stop":
+                print("🛑 COMANDO STOP - Deteniendo todas las actividades...")
+                # Marcar que debe pararse
+                self._stop_requested = True
+                # Detener inmediatamente todos los movimientos
                 self.mbot.doMove(0, 0)
+                # Detener todos los gestos
                 self.stop_gesture()
+                # Apagar todos los LEDs
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+                print("✅ Robot detenido completamente")
 
             elif command == "spin":
                 self.perform_spin()
@@ -63,8 +73,8 @@ class MBotController:
             print(f"❌ Error ejecutando comando {command}: {e}")
 
     def perform_gesture(self, gesture_name):
-        """Ejecuta un gesto emocional"""
-        if not self.mbot or self.is_performing_gesture:
+        """Ejecuta un gesto emocional (versión simplificada)"""
+        if not self.mbot:
             return
 
         if gesture_name not in GESTURES:
@@ -73,207 +83,134 @@ class MBotController:
         gesture = GESTURES[gesture_name]
         print(f"🎭 Realizando gesto: {gesture_name}")
 
+        # Resetear flag de parada
+        self._stop_requested = False
+
         # Detener gesto anterior
         self.stop_gesture()
 
-        # Iniciar nuevo gesto en thread separado
-        self.is_performing_gesture = True
-        self.current_gesture = gesture_name
-        self.gesture_thread = threading.Thread(
-            target=self._execute_gesture,
-            args=(gesture,),
-            daemon=True
-        )
-        self.gesture_thread.start()
+        # Iniciar nuevo gesto de forma simple (sin hilos por ahora)
+        self._execute_simple_gesture(gesture)
 
-    def _execute_gesture(self, gesture):
-        """Ejecuta los componentes de un gesto"""
+    def _execute_simple_gesture(self, gesture):
+        """Ejecuta un gesto de forma simple sin hilos"""
         try:
-            # Ejecutar movimiento, LEDs y sonido en paralelo
-            movement_thread = threading.Thread(target=self._do_movement, args=(gesture["movement"],))
-            led_thread = threading.Thread(target=self._do_leds, args=(gesture["leds"],))
-            sound_thread = threading.Thread(target=self._do_sound, args=(gesture["sound"],))
+            movement = gesture["movement"]
+            leds = gesture["leds"]
+            sound = gesture["sound"]
 
-            movement_thread.start()
-            led_thread.start()
-            sound_thread.start()
+            # Ejecutar movimiento
+            if movement == "bounce":
+                self._simple_bounce()
+            elif movement == "gentle_sway":
+                self._simple_sway()
+            elif movement == "slight_move":
+                self._simple_move()
 
-            # Esperar a que terminen
-            movement_thread.join()
-            led_thread.join()
-            sound_thread.join()
+            # Ejecutar LEDs
+            self._simple_leds(leds)
+
+            # Ejecutar sonido
+            if sound:
+                self._simple_sound(sound)
 
         except Exception as e:
-            print(f"❌ Error en gesto: {e}")
-        finally:
-            self.is_performing_gesture = False
-            self.current_gesture = None
+            print(f"❌ Error en gesto simple: {e}")
 
-    def _do_movement(self, movement_type):
-        """Ejecuta movimientos específicos"""
-        if not self.mbot:
+    def _simple_bounce(self):
+        """Movimiento de rebote simple"""
+        if self._stop_requested or not self.mbot:
             return
+        self.mbot.doMove(100, 100)
+        time.sleep(0.3)
+        if self._stop_requested:
+            self.mbot.doMove(0, 0)
+            return
+        self.mbot.doMove(-80, -80)
+        time.sleep(0.2)
+        self.mbot.doMove(0, 0)
 
-        try:
-            if movement_type == "bounce":
-                # Pequeños saltos hacia adelante y atrás
-                for _ in range(3):
-                    self.mbot.doMove(150, 150)
-                    time.sleep(0.2)
-                    self.mbot.doMove(-100, -100)
-                    time.sleep(0.15)
-                self.mbot.doMove(0, 0)
+    def _simple_sway(self):
+        """Balanceo simple"""
+        if self._stop_requested or not self.mbot:
+            return
+        self.mbot.doMove(50, -50)
+        time.sleep(0.5)
+        if self._stop_requested:
+            self.mbot.doMove(0, 0)
+            return
+        self.mbot.doMove(-50, 50)
+        time.sleep(0.5)
+        self.mbot.doMove(0, 0)
 
-            elif movement_type == "spin":
-                # Giro completo
-                self.mbot.doMove(100, -100)
-                time.sleep(2)
-                self.mbot.doMove(0, 0)
+    def _simple_move(self):
+        """Movimiento muy sutil"""
+        if self._stop_requested or not self.mbot:
+            return
+        self.mbot.doMove(30, 30)
+        time.sleep(0.3)
+        self.mbot.doMove(0, 0)
 
-            elif movement_type == "gentle_sway":
-                # Balanceo suave
-                for _ in range(4):
-                    self.mbot.doMove(50, -50)
-                    time.sleep(0.5)
-                    self.mbot.doMove(-50, 50)
-                    time.sleep(0.5)
-                self.mbot.doMove(0, 0)
-
-            elif movement_type == "head_shake":
-                # Movimiento de "no" (izquierda-derecha)
-                for _ in range(3):
-                    self.mbot.doMove(-60, 60)
-                    time.sleep(0.3)
-                    self.mbot.doMove(60, -60)
-                    time.sleep(0.3)
-                self.mbot.doMove(0, 0)
-
-            elif movement_type == "back_away":
-                # Retroceder lentamente
-                self.mbot.doMove(-80, -80)
-                time.sleep(1.5)
-                self.mbot.doMove(0, 0)
-
-            elif movement_type == "slight_move":
-                # Movimiento muy sutil
-                self.mbot.doMove(30, 30)
-                time.sleep(0.3)
-                self.mbot.doMove(0, 0)
-
-        except Exception as e:
-            print(f"❌ Error en movimiento {movement_type}: {e}")
-
-    def _do_leds(self, led_pattern):
-        """Controla los patrones de LED"""
-        if not self.mbot:
+    def _simple_leds(self, led_pattern):
+        """LEDs simples"""
+        if self._stop_requested or not self.mbot:
             return
 
         try:
             if led_pattern == "rainbow":
-                colors = [(255, 0, 0), (255, 165, 0), (255, 255, 0), (0, 255, 0), (0, 0, 255), (75, 0, 130), (238, 130, 238)]
-                for i in range(10):
-                    color = colors[i % len(colors)]
-                    self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])  # LED izquierdo
-                    time.sleep(0.1)
-                    self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])  # LED derecho
-                    time.sleep(0.2)
-
-            elif led_pattern == "flash_multicolor":
-                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
-                for _ in range(8):
-                    color = random.choice(colors)
+                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+                for color in colors:
+                    if self._stop_requested:
+                        break
                     self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
                     self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
-                    time.sleep(0.2)
-                    self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
-                    self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
-                    time.sleep(0.1)
+                    time.sleep(0.5)
 
             elif led_pattern == "blue_pulse":
-                for i in range(15):
-                    intensity = int(255 * (0.5 + 0.5 * abs(((i % 10) - 5) / 5)))
-                    self.mbot.doRGBLedOnBoard(0, 0, 0, intensity)
-                    self.mbot.doRGBLedOnBoard(1, 0, 0, intensity)
-                    time.sleep(0.2)
-
-            elif led_pattern == "yellow_blink":
-                for _ in range(6):
-                    self.mbot.doRGBLedOnBoard(0, 255, 255, 0)
-                    self.mbot.doRGBLedOnBoard(1, 255, 255, 0)
-                    time.sleep(0.3)
-                    self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
-                    self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
-                    time.sleep(0.3)
-
-            elif led_pattern == "red_dim":
-                self.mbot.doRGBLedOnBoard(0, 100, 0, 0)
-                self.mbot.doRGBLedOnBoard(1, 100, 0, 0)
-                time.sleep(2)
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 255)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 255)
+                time.sleep(1)
 
             elif led_pattern == "white_steady":
                 self.mbot.doRGBLedOnBoard(0, 255, 255, 255)
                 self.mbot.doRGBLedOnBoard(1, 255, 255, 255)
                 time.sleep(1)
 
-            elif led_pattern == "blue_breathing":
-                for cycle in range(3):
-                    # Fade in
-                    for i in range(0, 255, 15):
-                        self.mbot.doRGBLedOnBoard(0, 0, 0, i)
-                        self.mbot.doRGBLedOnBoard(1, 0, 0, i)
-                        time.sleep(0.05)
-                    # Fade out
-                    for i in range(255, 0, -15):
-                        self.mbot.doRGBLedOnBoard(0, 0, 0, i)
-                        self.mbot.doRGBLedOnBoard(1, 0, 0, i)
-                        time.sleep(0.05)
-
             # Apagar LEDs al final
+            if not self._stop_requested:
+                time.sleep(0.5)
             self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
             self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
         except Exception as e:
-            print(f"❌ Error en LEDs {led_pattern}: {e}")
+            print(f"❌ Error en LEDs: {e}")
 
-    def _do_sound(self, sound_type):
-        """Reproduce sonidos del buzzer"""
-        if not self.mbot or not sound_type:
+    def _simple_sound(self, sound_type):
+        """Sonidos simples"""
+        if self._stop_requested or not self.mbot:
             return
 
         try:
             if sound_type == "beep_happy":
-                notes = [523, 659, 783, 1047]  # Do, Mi, Sol, Do octava
-                for note in notes:
-                    self.mbot.doBuzzer(note, 200)
-                    time.sleep(0.25)
-
-            elif sound_type == "beep_fast":
-                for _ in range(5):
-                    self.mbot.doBuzzer(800, 100)
-                    time.sleep(0.15)
+                self.mbot.doBuzzer(523, 200)  # Do
+                if not self._stop_requested:
+                    time.sleep(0.3)
+                    self.mbot.doBuzzer(659, 200)  # Mi
 
             elif sound_type == "beep_low":
-                self.mbot.doBuzzer(200, 500)
-                time.sleep(0.6)
-
-            elif sound_type == "beep_confused":
-                notes = [400, 350, 300, 250]
-                for note in notes:
-                    self.mbot.doBuzzer(note, 200)
-                    time.sleep(0.1)
-
-            elif sound_type == "beep_sad":
-                notes = [400, 350, 300]
-                for note in notes:
-                    self.mbot.doBuzzer(note, 400)
-                    time.sleep(0.3)
+                self.mbot.doBuzzer(200, 300)
 
         except Exception as e:
-            print(f"❌ Error en sonido {sound_type}: {e}")
+            print(f"❌ Error en sonido: {e}")
 
     def perform_spin(self):
-        """Giro completo con efectos"""
-        self.perform_gesture("excited")
+        """Giro completo"""
+        if not self.mbot:
+            return
+        print("🔄 Girando...")
+        self.mbot.doMove(100, -100)
+        time.sleep(1.5)
+        self.mbot.doMove(0, 0)
 
     def perform_dance(self):
         """Secuencia de baile"""
@@ -282,20 +219,20 @@ class MBotController:
 
         print("💃 ¡Iniciando baile!")
         try:
-            # Secuencia de baile
+            # Secuencia simple de baile
             moves = [
                 (100, -100, 0.5),   # Giro derecha
                 (-100, 100, 0.5),   # Giro izquierda
-                (150, 150, 0.3),    # Adelante rápido
-                (-150, -150, 0.3),  # Atrás rápido
-                (100, -100, 1.0),   # Giro completo
+                (150, 150, 0.3),    # Adelante
+                (-100, -100, 0.3),  # Atrás
             ]
 
             for left, right, duration in moves:
+                if self._stop_requested:
+                    break
                 self.mbot.doMove(left, right)
-                # LEDs de colores mientras baila
-                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-                color = random.choice(colors)
+                # LED aleatorio
+                color = random.choice([(255, 0, 0), (0, 255, 0), (0, 0, 255)])
                 self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
                 self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
                 time.sleep(duration)
@@ -309,17 +246,37 @@ class MBotController:
 
     def perform_light_show(self):
         """Espectáculo de luces"""
-        self.perform_gesture("excited")
+        if not self.mbot:
+            return
+
+        print("✨ Espectáculo de luces!")
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
+
+        for i in range(10):
+            if self._stop_requested:
+                break
+            color = random.choice(colors)
+            self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+            self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+            time.sleep(0.3)
+
+        self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+        self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
     def stop_gesture(self):
-        """Detiene el gesto actual"""
-        if self.is_performing_gesture and self.gesture_thread:
-            self.is_performing_gesture = False
-            # Detener movimiento inmediatamente
-            if self.mbot:
-                self.mbot.doMove(0, 0)
-                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
-                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+        """Detiene el gesto actual inmediatamente"""
+        print("🛑 Deteniendo gesto actual...")
+
+        # Marcar que debe detenerse
+        self._stop_requested = True
+        self.is_performing_gesture = False
+
+        # Detener movimiento inmediatamente
+        if self.mbot:
+            self.mbot.doMove(0, 0)
+            self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+            self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+            print("✅ mBot detenido")
 
     def cleanup(self):
         """Limpia recursos del mBot"""
@@ -331,24 +288,25 @@ class MBotController:
             self.mbot.close()
 
 if __name__ == "__main__":
-    # Test del controlador
+    # Test del controlador simplificado
     controller = MBotController()
 
     if controller.mbot:
-        print("🧪 Probando gestos...")
+        print("🧪 Probando controlador simplificado...")
 
-        # Probar algunos gestos
-        test_gestures = ["happy", "excited", "thinking"]
-
-        for gesture in test_gestures:
-            print(f"Probando gesto: {gesture}")
-            controller.perform_gesture(gesture)
-            time.sleep(3)
-
-        # Probar comandos
+        # Probar comando de parada
+        print("1. Probando movimiento y parada...")
         controller.execute_command("forward")
+        time.sleep(1)
+        controller.execute_command("stop")
+
         time.sleep(2)
-        controller.execute_command("spin")
+
+        # Probar gesto y parada
+        print("2. Probando gesto y parada...")
+        controller.perform_gesture("happy")
+        time.sleep(1)
+        controller.stop_gesture()
 
         controller.cleanup()
     else:
