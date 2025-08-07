@@ -4,9 +4,13 @@ Test completo del sistema mBot Asistente de Voz
 Simula el flujo completo sin usar micrófono real
 """
 
-from ai_brain import AIBrain
-from mbot_controller import MBotController
-from gesture_engine import GestureEngine
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from src.core.ai_brain import AIBrain
+from src.core.mbot_controller import MBotController
+from src.engines.gesture_engine import GestureEngine
 import time
 
 def test_complete_system():

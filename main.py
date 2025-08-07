@@ -8,10 +8,10 @@ import threading
 import time
 import signal
 import sys
-from audio_handler import AudioHandler
-from ai_brain import AIBrain
-from mbot_controller import MBotController
-from gesture_engine_fixed import GestureEngineFixed
+from src.core.audio_handler import AudioHandler
+from src.core.ai_brain import AIBrain
+from src.core.mbot_controller import MBotController
+from src.engines.gesture_engine_fixed import GestureEngineFixed
 from config import *
 
 class MBotAssistant:

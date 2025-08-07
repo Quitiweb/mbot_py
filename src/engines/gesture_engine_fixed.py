@@ -15,7 +15,7 @@ class GestureEngineFixed:
         self.emotion_duration = 0
         self.emotion_queue = []
         self.is_transitioning = False
-        
+
         # Control de hilos y timers
         self.active_timers = []
         self.gesture_lock = threading.Lock()
@@ -26,10 +26,10 @@ class GestureEngineFixed:
         with self.gesture_lock:
             # Cancelar cualquier timer pendiente
             self._cancel_all_timers()
-            
+
             # Parar cualquier gesto activo
             self.mbot_controller.stop_current_gesture()
-            
+
             if emotion not in GESTURES:
                 emotion = "neutral"
 
@@ -57,7 +57,7 @@ class GestureEngineFixed:
         with self.gesture_lock:
             if self.should_stop:
                 return
-                
+
             if time.time() - self.emotion_start_time >= self.emotion_duration:
                 print("😐 Volviendo a estado neutral de forma segura")
                 try:
@@ -78,7 +78,7 @@ class GestureEngineFixed:
     def express_while_speaking(self, text, base_emotion="neutral"):
         """Expresión durante el habla - VERSIÓN SIMPLIFICADA"""
         # Análisis simple del texto
-        exclamations = text.count('!') 
+        exclamations = text.count('!')
         questions = text.count('?')
         text_length = len(text.split())
         speaking_duration = max(2, text_length * 0.4)
@@ -87,7 +87,7 @@ class GestureEngineFixed:
         if exclamations > 1 or "increíble" in text.lower() or "genial" in text.lower():
             target_emotion = "excited"
         elif questions > 0 or "qué" in text.lower() or "cómo" in text.lower():
-            target_emotion = "thinking" 
+            target_emotion = "thinking"
         elif "lo siento" in text.lower() or "disculpa" in text.lower():
             target_emotion = "sad"
         elif exclamations > 0 or "bien" in text.lower() or "perfecto" in text.lower():
@@ -112,11 +112,11 @@ class GestureEngineFixed:
         """Parar todo de forma segura"""
         print("🛑 Parando gesture engine...")
         self.should_stop = True
-        
+
         with self.gesture_lock:
             self._cancel_all_timers()
             self.mbot_controller.stop_current_gesture()
-            
+
             # Asegurar parada completa
             try:
                 if self.mbot_controller.mbot:
@@ -130,21 +130,21 @@ def test_fixed_gesture_engine():
     """Test del gesture engine arreglado"""
     print("🧪 PROBANDO GESTURE ENGINE ARREGLADO")
     print("=" * 50)
-    
+
     # Importar después para evitar dependencias circulares
     from mbot_final import MBotFinal
-    
+
     try:
         # Mock del controlador para testing
         class MockController:
             def __init__(self):
                 self.mbot = MBotFinal(connection_type="auto")
                 self.gesture_active = False
-                
+
             def perform_gesture(self, emotion):
                 print(f"🎭 Ejecutando gesto: {emotion}")
                 self.gesture_active = True
-                
+
                 # Simular gesto corto y seguro
                 if emotion == "happy":
                     self.mbot.doRGBLedOnBoard(0, 0, 255, 0)  # Verde
@@ -155,45 +155,45 @@ def test_fixed_gesture_engine():
                 elif emotion == "neutral":
                     self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
                     self.mbot.doMove(0, 0)
-                
+
                 self.gesture_active = False
                 print(f"✅ Gesto {emotion} completado")
-                
+
             def stop_current_gesture(self):
                 print("🛑 Parando gesto actual")
                 self.gesture_active = False
                 if hasattr(self, 'mbot') and self.mbot:
                     self.mbot.doMove(0, 0)
                     self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
-        
+
         controller = MockController()
         gesture_engine = GestureEngineFixed(controller)
-        
+
         print("✅ Gesture engine creado")
-        
+
         # Prueba 1: Emoción simple
         print("\n1️⃣ Probando emoción simple...")
         gesture_engine.set_emotion("happy", 2)
         time.sleep(3)  # Debe volver a neutral automáticamente
-        
+
         # Prueba 2: Cambio rápido de emociones
         print("\n2️⃣ Probando cambios rápidos...")
         gesture_engine.set_emotion("happy", 5)
         time.sleep(1)
         gesture_engine.set_emotion("excited", 3)  # Debe cancelar el anterior
         time.sleep(4)
-        
+
         # Prueba 3: Parada forzada
         print("\n3️⃣ Probando parada forzada...")
         gesture_engine.set_emotion("happy", 10)
         time.sleep(1)
         gesture_engine.stop_all()
-        
+
         print("\n✅ TODAS LAS PRUEBAS COMPLETADAS")
         print("Si no hubo bucles infinitos, el problema está resuelto")
-        
+
         controller.mbot.close()
-        
+
     except Exception as e:
         print(f"❌ Error en test: {e}")
 

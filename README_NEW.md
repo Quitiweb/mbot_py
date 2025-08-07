@@ -19,7 +19,7 @@ mbot_project/
 ├── config.py                  # Configuración del sistema
 ├── requirements.txt           # Dependencias Python
 ├── setup.py                   # Configuración del paquete
-├── 
+├──
 ├── src/                       # Código fuente principal
 │   ├── core/                  # Componentes centrales
 │   │   ├── audio_handler.py   # Manejo de audio (STT/TTS)

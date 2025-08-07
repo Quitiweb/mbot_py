@@ -1,7 +1,7 @@
 import threading
 import time
 import random
-from mbot_original_protocol import MBotOriginalProtocol
+from ..protocols.mbot_original_protocol import MBotOriginalProtocol
 from config import *
 
 class MBotController:
@@ -588,14 +588,14 @@ class MBotController:
                 self.mbot.forceStop()
             else:
                 self.mbot.doMove(0, 0)
-            
+
             # Limpieza adicional
             if hasattr(self.mbot, 'emergencyCleanup'):
                 self.mbot.emergencyCleanup()
             else:
                 self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
                 self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
-            
+
             print("✅ mBot detenido con método mejorado")
 
     def stop_current_gesture(self):
