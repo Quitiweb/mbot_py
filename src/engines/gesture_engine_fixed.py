@@ -99,14 +99,82 @@ class GestureEngineFixed:
         self.set_emotion(target_emotion, speaking_duration)
 
     def listening_mode(self):
-        """Modo de escucha - SIN bucles infinitos"""
-        print("👂 Activando modo escucha")
-        self.set_emotion("thinking", 5)  # Máximo 5 segundos
+        """Modo escucha - Robot atento y vivo"""
+        with self.gesture_lock:
+            print("👂 Modo escucha activado")
+            self._cancel_all_timers()
+            self.mbot_controller.stop_current_gesture()
+
+            # Gesto de escucha: LEDs azules pulsantes, leve balanceo
+            self.current_emotion = "listening"
+            try:
+                self.mbot_controller.perform_gesture("listening")
+            except Exception as e:
+                print(f"❌ Error en modo escucha: {e}")
 
     def thinking_mode(self, duration=2):
-        """Modo pensando"""
-        print("🤔 Modo pensando...")
+        """Modo pensando - Indica procesamiento"""
+        print(f"🤔 Modo pensando...")
         self.set_emotion("thinking", duration)
+
+    def idle_movement(self):
+        """Pequeño movimiento para mostrar que está vivo durante la escucha"""
+        with self.gesture_lock:
+            try:
+                print("🔄 Movimiento de vida...")
+                # Pequeño movimiento sutil
+                self.mbot_controller.mbot.doMove(20, -20)  # Giro muy leve
+                time.sleep(0.3)
+                self.mbot_controller.mbot.doMove(0, 0)  # Parar
+
+                # LED azul breathing para mostrar que escucha
+                self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 100, 255)
+                self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 100, 255)
+                time.sleep(0.5)
+                self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 50, 150)
+                self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 50, 150)
+
+            except Exception as e:
+                print(f"❌ Error en movimiento idle: {e}")
+
+    def immediate_action(self, action_type):
+        """Ejecuta acción inmediata (para comandos de movimiento)"""
+        with self.gesture_lock:
+            print(f"⚡ Acción inmediata: {action_type}")
+            self._cancel_all_timers()
+            self.mbot_controller.stop_current_gesture()
+
+            try:
+                if action_type == "backward":
+                    # Retroceder con luces de alerta
+                    self.mbot_controller.mbot.doRGBLedOnBoard(0, 255, 255, 0)  # Amarillo
+                    self.mbot_controller.mbot.doRGBLedOnBoard(1, 255, 255, 0)
+                    self.mbot_controller.mbot.doMove(-100, -100)
+                    time.sleep(1.5)
+                    self.mbot_controller.mbot.doMove(0, 0)
+
+                elif action_type == "forward":
+                    # Avanzar con luces verdes
+                    self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 255, 0)  # Verde
+                    self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 255, 0)
+                    self.mbot_controller.mbot.doMove(100, 100)
+                    time.sleep(1.5)
+                    self.mbot_controller.mbot.doMove(0, 0)
+
+                elif action_type == "stop":
+                    # Parar con luz roja
+                    self.mbot_controller.mbot.doMove(0, 0)
+                    self.mbot_controller.mbot.doRGBLedOnBoard(0, 255, 0, 0)  # Rojo
+                    self.mbot_controller.mbot.doRGBLedOnBoard(1, 255, 0, 0)
+                    self.mbot_controller.mbot.doBuzzer(300, 200)  # Beep de parada
+
+                # Volver a estado neutral después de la acción
+                time.sleep(0.5)
+                self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+
+            except Exception as e:
+                print(f"❌ Error en acción inmediata: {e}")
 
     def stop_all(self):
         """Parar todo de forma segura"""

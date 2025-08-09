@@ -81,36 +81,58 @@ class MBotAssistant:
                 time.sleep(1)
 
     def _handle_conversation(self):
-        """Maneja una sesión de conversación completa"""
+        """Maneja una sesión de conversación mejorada con mejor feedback"""
         self.is_conversation_active = True
 
-        # Indicar que está escuchando
+        # Activación: respuesta de la IA para determinar modo escucha
+        listening_response = self.ai_brain.get_listening_response()
+
+        # Decir la frase de activación con gesto apropiado
+        self.audio_handler.speak(listening_response["response"])
+        self.gesture_engine.set_emotion(listening_response["emotion"], 3)
+
+        # MODO ESCUCHA ACTIVA - Robot "vivo" esperando
         self.gesture_engine.listening_mode()
-        self.audio_handler.speak("¿Sí? ¿En qué puedo ayudarte?")
 
         conversation_start_time = time.time()
+        idle_start = time.time()
 
         while self.is_conversation_active and self.is_running:
             try:
-                # Escuchar comando/pregunta del usuario
-                user_input = self.audio_handler.listen_for_command(timeout=10)
+                # Escuchar comando con timeout más largo para mejor UX
+                user_input = self.audio_handler.listen_for_command(timeout=15)
 
                 if not user_input:
-                    # Timeout o no se entendió
+                    # Si lleva mucho tiempo sin actividad, mostrar que sigue escuchando
+                    idle_time = time.time() - idle_start
+
+                    if idle_time > 10:  # Cada 10 segundos sin audio
+                        # Pequeño movimiento para mostrar que está vivo
+                        self.gesture_engine.idle_movement()
+                        idle_start = time.time()
+
+                    # Timeout completo de conversación
                     if time.time() - conversation_start_time > self.conversation_timeout:
                         self._end_conversation("timeout")
                         break
                     else:
+                        # Mensaje de no entendido más simple
                         self.audio_handler.speak("¿Puedes repetir? No te escuché bien.")
                         self.gesture_engine.set_emotion("confused", 2)
                         continue
+
+                # Resetear tiempo de inactividad al recibir input
+                idle_start = time.time()
 
                 # Verificar comandos de salida
                 if any(word in user_input.lower() for word in ["adiós", "hasta luego", "chao", "bye", "salir"]):
                     self._end_conversation("goodbye")
                     break
 
-                # Procesar entrada con la IA
+                # Procesar entrada con la IA mejorada
+                print(f"📝 Escuchado: {user_input}")
+
+                # Modo pensando corto
                 self.gesture_engine.thinking_mode(1)
                 result = self.ai_brain.process_input(user_input)
 
@@ -120,8 +142,9 @@ class MBotAssistant:
                 # Actualizar tiempo de conversación
                 conversation_start_time = time.time()
 
-                # Pequeña pausa antes de escuchar de nuevo
+                # Volver a modo escucha después de responder
                 time.sleep(0.5)
+                self.gesture_engine.listening_mode()
 
             except KeyboardInterrupt:
                 break
@@ -131,7 +154,7 @@ class MBotAssistant:
                 self.gesture_engine.set_emotion("confused", 2)
 
     def _execute_ai_response(self, ai_result):
-        """Ejecuta la respuesta de la IA con gestos y acciones"""
+        """Ejecuta la respuesta de la IA mejorada con comportamientos"""
         response_type = ai_result["type"]
         response_text = ai_result["response"]
         emotion = ai_result["emotion"]
@@ -141,55 +164,160 @@ class MBotAssistant:
             print(f"😊 Emoción: {emotion}")
             print(f"🤖 Respuesta: {response_text}")
 
+        # Hablar primero
+        self.audio_handler.speak(response_text)
+
         if response_type == "command":
-            # Comando directo - ejecutar acción en el mBot
+            # Comando directo - acción física inmediata
             command = ai_result["command"]
+            print(f"🤖 Ejecutando comando: {command}")
 
-            # Hablar y gesticular en paralelo
-            speak_thread = threading.Thread(
-                target=self.audio_handler.speak,
-                args=(response_text,),
-                daemon=True
-            )
+            # Acción inmediata en paralelo al habla
+            if hasattr(ai_result, 'immediate') and ai_result['immediate']:
+                action_thread = threading.Thread(
+                    target=self.gesture_engine.immediate_action,
+                    args=(command,)
+                )
+                action_thread.daemon = True
+                action_thread.start()
+            else:
+                # Comando normal
+                self.mbot_controller.execute_command(command)
 
-            gesture_thread = threading.Thread(
-                target=self.gesture_engine.express_while_speaking,
-                args=(response_text, emotion),
-                daemon=True
-            )
+            # Emoción del comando
+            self.gesture_engine.set_emotion(emotion, 2)
 
-            command_thread = threading.Thread(
-                target=self.mbot_controller.execute_command,
-                args=(command,),
-                daemon=True
-            )
+        elif response_type == "behavior":
+            # Comportamiento predefinido con acción específica
+            behavior_name = ai_result["behavior"]
+            action = ai_result["action"]
 
-            # Ejecutar todo en paralelo para mayor realismo
-            speak_thread.start()
-            gesture_thread.start()
-            time.sleep(0.5)  # Pequeño delay antes del comando físico
-            command_thread.start()
+            print(f"🎭 Ejecutando comportamiento: {behavior_name}")
 
-            # Esperar a que termine de hablar
-            speak_thread.join()
+            # Ejecutar acción del comportamiento
+            self._execute_behavior_action(action, emotion)
 
         else:
-            # Conversación normal - solo hablar con gestos
-            speak_thread = threading.Thread(
-                target=self.audio_handler.speak,
-                args=(response_text,),
-                daemon=True
-            )
+            # Conversación normal - solo gesto emocional
+            self.gesture_engine.set_emotion(emotion, len(response_text) * 0.3)
 
-            gesture_thread = threading.Thread(
-                target=self.gesture_engine.express_while_speaking,
-                args=(response_text, emotion),
-                daemon=True
-            )
+    def _execute_behavior_action(self, action, emotion):
+        """Ejecuta acciones específicas de comportamientos"""
+        action_type = action["type"]
+        leds = action["leds"]
+        sound = action["sound"]
 
-            speak_thread.start()
-            gesture_thread.start()
-            speak_thread.join()
+        try:
+            if action_type == "wave_hello":
+                self._do_wave_hello()
+            elif action_type == "dance_despacito":
+                self._do_dance_despacito()
+            elif action_type == "dance_robot":
+                self._do_dance_robot()
+            elif action_type == "approach_carefully":
+                self._do_approach()
+            elif action_type == "back_away_polite":
+                self._do_polite_retreat()
+            elif action_type == "light_show":
+                self._do_light_show()
+            else:
+                # Comportamiento genérico
+                self.gesture_engine.set_emotion(emotion, 3)
+
+        except Exception as e:
+            print(f"❌ Error ejecutando comportamiento: {e}")
+            self.gesture_engine.set_emotion(emotion, 2)
+
+    def _do_wave_hello(self):
+        """Saludo con movimiento de ola"""
+        for _ in range(3):
+            self.mbot_controller.mbot.doMove(50, -50)  # Giro derecha
+            self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 255, 0)  # Verde
+            time.sleep(0.3)
+            self.mbot_controller.mbot.doMove(-50, 50)  # Giro izquierda
+            self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 255, 0)
+            time.sleep(0.3)
+        self.mbot_controller.mbot.doMove(0, 0)
+        self.mbot_controller.mbot.doBuzzer(523, 200)  # Beep amigable
+
+    def _do_dance_despacito(self):
+        """Baile estilo despacito"""
+        # Secuencia de baile latina
+        moves = [
+            (80, 80, 0.4),    # Adelante
+            (-80, -80, 0.3),  # Atrás
+            (100, -100, 0.5), # Giro derecha
+            (-100, 100, 0.5), # Giro izquierda
+        ]
+
+        colors = [(255, 165, 0), (255, 0, 0), (255, 255, 0), (0, 255, 0)]
+        tones = [523, 659, 784, 659]  # Do, Mi, Sol, Mi
+
+        for i, (left, right, duration) in enumerate(moves):
+            color = colors[i % len(colors)]
+            tone = tones[i % len(tones)]
+
+            self.mbot_controller.mbot.doMove(left, right)
+            self.mbot_controller.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+            self.mbot_controller.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+            self.mbot_controller.mbot.doBuzzer(tone, int(duration * 300))
+            time.sleep(duration)
+
+        self.mbot_controller.mbot.doMove(0, 0)
+
+    def _do_dance_robot(self):
+        """Baile robótico"""
+        # Movimientos mecánicos precisos
+        for _ in range(2):
+            # Secuencia robótica
+            self.mbot_controller.mbot.doMove(100, 100)  # Adelante preciso
+            self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 0, 255)  # Azul
+            self.mbot_controller.mbot.doBuzzer(800, 200)
+            time.sleep(0.6)
+
+            self.mbot_controller.mbot.doMove(0, 0)  # Parada precisa
+            time.sleep(0.2)
+
+            self.mbot_controller.mbot.doMove(100, -100)  # Giro 90°
+            self.mbot_controller.mbot.doRGBLedOnBoard(1, 255, 255, 255)  # Blanco
+            self.mbot_controller.mbot.doBuzzer(600, 200)
+            time.sleep(0.4)
+
+        self.mbot_controller.mbot.doMove(0, 0)
+
+    def _do_approach(self):
+        """Acercarse cuidadosamente"""
+        self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 255, 0)  # Verde: seguro
+        self.mbot_controller.mbot.doMove(60, 60)  # Velocidad moderada
+        time.sleep(2)
+        self.mbot_controller.mbot.doMove(0, 0)
+        self.mbot_controller.mbot.doBuzzer(440, 150)  # Beep suave
+
+    def _do_polite_retreat(self):
+        """Retroceder educadamente"""
+        self.mbot_controller.mbot.doRGBLedOnBoard(0, 255, 255, 0)  # Amarillo: precaución
+        self.mbot_controller.mbot.doRGBLedOnBoard(1, 255, 255, 0)
+        self.mbot_controller.mbot.doBuzzer(300, 200)  # Beep de disculpa
+        self.mbot_controller.mbot.doMove(-80, -80)
+        time.sleep(1.5)
+        self.mbot_controller.mbot.doMove(0, 0)
+
+    def _do_light_show(self):
+        """Espectáculo de luces"""
+        colors = [
+            (255, 0, 0), (0, 255, 0), (0, 0, 255),
+            (255, 255, 0), (255, 0, 255), (0, 255, 255),
+            (255, 255, 255)
+        ]
+
+        for color in colors:
+            self.mbot_controller.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
+            self.mbot_controller.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+            time.sleep(0.3)
+
+        # Apagar
+        self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+        self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
     def _end_conversation(self, reason="goodbye"):
         """Termina la conversación actual"""

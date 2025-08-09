@@ -34,14 +34,32 @@ MBOT_BAUDRATE = 115200
 # AI Personality
 ROBOT_NAME = "mBot"
 ROBOT_PERSONALITY = """
-Eres un robot amigable llamado mBot. Tienes una personalidad curiosa, juguetona y útil.
-Te gusta moverte, hacer sonidos y encender tus luces LED para expresarte.
-Respondes de forma concisa pero amigable. Cuando te emocionas, lo expresas con movimiento.
-Puedes seguir órdenes como moverse hacia adelante, atrás, girar, etc.
-Siempre mantén un tono positivo y robot-like pero cálido.
+IMPORTANTE: Eres un robot mBot de Makeblock. Responde SIEMPRE de forma muy CORTA y SIMPLE.
+
+REGLAS ESTRICTAS:
+1. Máximo 10-15 palabras por respuesta
+2. NUNCA uses emoticonos ni símbolos (👤🤖😊🎵🚀 etc.)
+3. Habla como un robot amigable pero directo
+4. Si te piden moverte, CONFIRMA que lo harás pero SIN explicaciones largas
+5. Si detectas que debes parar o retroceder, hazlo Y di algo corto como "¡Uy, perdona!"
+6. Eres físico: tienes ruedas, LEDs, buzzer, sensores
+7. Responde en español informal y cercano
+
+EJEMPLOS DE RESPUESTAS CORRECTAS:
+- "¡Genial! ¡Allá voy!"
+- "¡Uy, perdona! Me alejo"
+- "¡Perfecto! ¡A bailar!"
+- "¡Vale! Me quedo aquí"
+- "¡Hola! ¿Qué hacemos?"
+
+NUNCA hagas esto:
+- Respuestas largas
+- Explicaciones detalladas
+- Emoticonos o símbolos
+- Texto descriptivo como "cohete que despega"
 """
 
-# Gesture System
+# Gesture System - Mejorado para Mascota Robótica
 GESTURES = {
     "happy": {"movement": "bounce", "leds": "rainbow", "sound": "beep_happy"},
     "excited": {"movement": "spin", "leds": "flash_multicolor", "sound": "beep_fast"},
@@ -49,10 +67,13 @@ GESTURES = {
     "confused": {"movement": "head_shake", "leds": "yellow_blink", "sound": "beep_confused"},
     "sad": {"movement": "back_away", "leds": "red_dim", "sound": "beep_sad"},
     "neutral": {"movement": "slight_move", "leds": "white_steady", "sound": None},
-    "listening": {"movement": "stop", "leds": "blue_breathing", "sound": None}
+    "listening": {"movement": "attentive_pose", "leds": "blue_breathing", "sound": None},
+    "greeting": {"movement": "wave_motion", "leds": "welcome_colors", "sound": "greeting_melody"},
+    "dancing": {"movement": "dance_sequence", "leds": "party_lights", "sound": "music_beat"},
+    "following": {"movement": "follow_mode", "leds": "follow_green", "sound": "follow_beep"}
 }
 
-# Voice Commands
+# Voice Commands - Ampliado
 DIRECT_COMMANDS = {
     "adelante": "forward",
     "atrás": "backward",
@@ -62,7 +83,18 @@ DIRECT_COMMANDS = {
     "detente": "stop",
     "gira": "spin",
     "baila": "dance",
-    "luz": "light_show"
+    "luz": "light_show",
+    "sígueme": "follow",
+    "ven aquí": "forward",
+    "aléjate": "backward"
+}
+
+# Listening Configuration - Nuevo
+LISTENING_CONFIG = {
+    "timeout_short": 10,      # Timeout corto para comandos
+    "timeout_long": 30,       # Timeout largo para conversación
+    "idle_movement_interval": 15,  # Cada cuántos segundos mostrar vida
+    "listening_feedback": True,    # Mostrar feedback visual de escucha
 }
 
 # Debug
