@@ -14,6 +14,7 @@ from src.core.mbot_controller import MBotController
 from src.engines.gesture_engine_fixed import GestureEngineFixed
 from config import *
 
+
 class MBotAssistant:
     def __init__(self):
         print("🤖 Iniciando Asistente mBot...")

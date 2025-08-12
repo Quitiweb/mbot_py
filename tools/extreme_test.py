@@ -2,10 +2,9 @@
 """
 Test EXTREMO para mBot - Comandos obviamente visibles
 """
-
 import asyncio
 from bleak import BleakScanner, BleakClient
-import time
+
 
 async def extreme_test():
     """Test con comandos extremos para asegurar visibilidad"""

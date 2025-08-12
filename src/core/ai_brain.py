@@ -225,24 +225,6 @@ Respuesta:"""
 
     def _handle_direct_command(self, command, text):
         return self._handle_movement_command(command, text)
-        if "para" in text_lower:
-            # Verificar si es realmente un comando de parar
-            if (text_lower.startswith("para") or
-                text_lower.endswith("para") or
-                text_lower in ["para", "para ya", "para ahora", "para inmediatamente"]):
-                return "stop"
-
-        # Para otros comandos, usar detección normal
-        for spanish_cmd, english_cmd in DIRECT_COMMANDS.items():
-            if spanish_cmd == "para":  # Ya lo manejamos arriba
-                continue
-            # Verificar si es una palabra completa
-            if (f" {spanish_cmd} " in f" {text_lower} " or
-                text_lower.startswith(f"{spanish_cmd} ") or
-                text_lower.endswith(f" {spanish_cmd}") or
-                text_lower == spanish_cmd):
-                return english_cmd
-        return None
 
     def _handle_direct_command(self, command, original_text):
         """Maneja comandos directos del mBot"""

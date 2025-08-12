@@ -4,9 +4,7 @@ Investigación profunda del bucle infinito - Comando por comando
 """
 
 import time
-import asyncio
-import threading
-from mbot_final import MBotFinal
+from legacy.mbot_final import MBotFinal
 
 def test_each_command_individually():
     """Prueba cada comando individual para encontrar el culpable"""

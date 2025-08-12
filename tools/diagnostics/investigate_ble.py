@@ -5,7 +5,6 @@ Investigador BLE para mBot - Analiza las características y protocolos
 
 import asyncio
 from bleak import BleakScanner, BleakClient
-import time
 
 async def analyze_mbot_ble():
     """Analiza en detalle las características del mBot BLE"""

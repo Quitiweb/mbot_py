@@ -4,7 +4,7 @@ Investigación específica del comando de parada
 """
 
 import time
-from mbot_final import MBotFinal
+from legacy.mbot_final import MBotFinal
 
 def test_stop_command_variations():
     """Prueba diferentes variaciones del comando de parada"""

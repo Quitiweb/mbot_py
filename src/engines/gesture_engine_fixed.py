@@ -200,7 +200,7 @@ def test_fixed_gesture_engine():
     print("=" * 50)
 
     # Importar después para evitar dependencias circulares
-    from mbot_final import MBotFinal
+    from legacy.mbot_final import MBotFinal
 
     try:
         # Mock del controlador para testing

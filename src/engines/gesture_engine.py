@@ -128,7 +128,7 @@ class GestureEngine:
 
 if __name__ == "__main__":
     # Test del motor de gestos
-    from mbot_controller import MBotController
+    from src.core.mbot_controller import MBotController
 
     controller = MBotController()
     gesture_engine = GestureEngine(controller)
