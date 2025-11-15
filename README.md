@@ -1,212 +1,69 @@
-# mBot Voice Assistant 🤖🎤
+# mBot Voice Assistant
 
-Un asistente de voz inteligente para el robot mBot que utiliza IA local (Ollama) para conversaciones naturales y control completo del robot.
+Convierte tu mBot en un asistente de voz que entiende comandos en español, responde con una personalidad breve y controla motores, LEDs y sonidos usando IA local (Ollama).
 
-## 🌟 Características
+## Qué hace
 
-- **IA Local**: Funciona con Ollama (Qwen2.5) sin necesidad de conexión a internet
-- **Conectividad Dual**: Soporte automático para Bluetooth LE y USB
-- **Control de Voz**: Reconocimiento de comandos en español
-- **Síntesis de Voz**: Respuestas habladas con voz natural
-- **Sistema de Gestos**: Expresiones emocionales con movimiento, LEDs y sonidos
-- **Protocolo Original**: Compatible 100% con el protocolo oficial de mBot
+- Escucha la palabra clave “robot” y mantiene conversaciones cortas.
+- Traduce órdenes como “adelante”, “gira”, “baila” o “sígueme” en movimientos reales.
+- Expresa emociones mediante LEDs y sonidos mientras habla desde el portátil.
+- Funciona totalmente offline gracias a Ollama y al modelo `qwen2.5:7b`.
 
-## 📁 Estructura del Proyecto
+## Requisitos
 
-```
-mbot_project/
-├── main.py                    # Punto de entrada principal
-├── config.py                  # Configuración del sistema
-├── requirements.txt           # Dependencias Python
-├── setup.py                   # Configuración del paquete
-├── 
-├── src/                       # Código fuente principal
-│   ├── core/                  # Componentes centrales
-│   │   ├── audio_handler.py   # Manejo de audio (STT/TTS)
-│   │   ├── ai_brain.py        # Motor de IA (Ollama)
-│   │   └── mbot_controller.py # Controlador principal del robot
-│   ├── protocols/             # Protocolos de comunicación
-│   │   ├── mbot_original_protocol.py  # Protocolo oficial mBot
-│   │   ├── mbot_ble_fixed.py          # Protocolo BLE mejorado
-│   │   └── mbot_ble_simple.py         # Protocolo BLE básico
-│   └── engines/               # Motores especializados
-│       ├── gesture_engine.py         # Motor de gestos (v1)
-│       └── gesture_engine_fixed.py   # Motor de gestos mejorado
-│
-├── tests/                     # Suite de pruebas
-│   ├── unit/                  # Tests unitarios
-│   │   ├── test_mbot.py       # Tests del robot
-│   │   ├── test_connection.py # Tests de conectividad
-│   │   └── test_protocols.py  # Tests de protocolos
-│   └── integration/           # Tests de integración
-│       ├── test_complete_system.py  # Test del sistema completo
-│       ├── test_integration.py      # Tests de integración
-│       └── test_voices.py           # Tests de síntesis de voz
-│
-├── tools/                     # Herramientas de desarrollo
-│   ├── diagnostics/           # Herramientas de diagnóstico
-│   │   ├── diagnose_loop.py   # Diagnóstico de bucles
-│   │   └── investigate_*.py   # Herramientas de investigación
-│   ├── extreme_test.py        # Tests extremos
-│   └── mbot_tools.py          # Herramientas generales
-│
-├── legacy/                    # Código heredado/obsoleto
-│   ├── mbot_final.py          # Versión anterior
-│   └── mbot_enhanced*.py      # Versiones experimentales
-│
-└── mbot_py/                   # Librería original de mBot
-    └── lib/mBot.py            # Implementación original
-```
+- macOS / Linux / Windows con Python 3.10 o superior.
+- mBot encendido y conectado por Bluetooth LE (preferido) o USB.
+- Micrófono y altavoces en el ordenador.
+- [Ollama](https://ollama.ai) instalado con el modelo `qwen2.5:7b` descargado.
+- Dependencias Python listadas en `requirements.txt` (incluyen PyAudio, SpeechRecognition, Bleak, etc.).
 
-## 🚀 Instalación
+## Puesta en marcha
 
-### 1. Clonar el repositorio
 ```bash
-git clone <repository-url>
+# 1) Clona el repo y entra en la carpeta
+git clone <url> mbot_project
 cd mbot_project
-```
 
-### 2. Crear entorno virtual
-```bash
+# 2) Crea y activa un entorno virtual
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# o
-venv\Scripts\activate     # Windows
-```
+source venv/bin/activate      # macOS / Linux
+# .\venv\Scripts\activate    # Windows
 
-### 3. Instalar dependencias
-```bash
+# 3) Instala las dependencias
 pip install -r requirements.txt
-```
 
-### 4. Configurar Ollama (IA Local)
-```bash
-# Instalar Ollama
-curl -fsSL https://ollama.ai/install.sh | sh
+# 4) Copia y ajusta la configuración
+cp config_example.py config.py
+# Edita config.py para poner la voz, tipo de conexión, etc.
 
-# Descargar modelo Qwen2.5
+# 5) Prepara la IA local una vez
 ollama pull qwen2.5:7b
 ```
 
-### 5. Configuración
-```bash
-cp config_example.py config.py
-# Editar config.py según tus necesidades
-```
+## Cómo ejecutarlo
 
-## 🎮 Uso
-
-### Ejecutar el asistente
 ```bash
+# Lanza Ollama si no está en marcha (una sola vez por sesión)
+ollama serve &
+
+# Activa el entorno virtual si hace falta
+source venv/bin/activate
+
+# Arranca el asistente
 python main.py
 ```
 
-### Comandos disponibles
-- **Activación**: Di "robot" para activar el asistente
-- **Movimiento**: "ve hacia adelante", "gira a la derecha", "para"
-- **Gestos**: "muéstrate feliz", "haz una danza", "parpadea"
-- **Conversación**: Habla naturalmente con el robot
+1. Enciende el mBot y espera a que Bluetooth/USB se conecte.
+2. Di “robot” para activarlo. El asistente responde por voz y muestra LEDs azules.
+3. Da comandos cortos como “avanza”, “gira a la derecha”, “baila”, “detente” o conversa brevemente.
+4. Di “adiós” o pulsa `Ctrl+C` para salir. Usa `mbot_controller.py` si quieres probar comandos básicos sin voz.
 
-## 🧪 Testing
+## Pruebas rápidas (opcional)
 
-### Ejecutar tests unitarios
 ```bash
-python -m pytest tests/unit/ -v
+python tests/test_stop.py        # Comprueba movimiento básico
+python tests/test_dance.py       # Lanza el baile manualmente
+python -m pytest tests -k stop   # Ejecuta un subconjunto de tests
 ```
 
-### Ejecutar tests de integración
-```bash
-python -m pytest tests/integration/ -v
-```
-
-### Tests específicos
-```bash
-# Test de conectividad
-python tests/unit/test_connection.py
-
-# Test del sistema completo
-python tests/integration/test_complete_system.py
-```
-
-## 🛠️ Herramientas de Desarrollo
-
-### Diagnóstico de problemas
-```bash
-# Diagnóstico de bucles infinitos
-python tools/diagnostics/diagnose_loop.py
-
-# Investigación de conectividad
-python tools/diagnostics/investigate_ble.py
-```
-
-### Tests extremos
-```bash
-python tools/extreme_test.py
-```
-
-## 📡 Conectividad
-
-### Bluetooth LE (Recomendado)
-- Conexión automática
-- Mayor estabilidad
-- Sin cables
-
-### USB
-- Conexión por cable
-- Fallback automático
-- Mayor velocidad
-
-## 🎛️ Configuración
-
-Edita `config.py` para personalizar:
-
-```python
-# IA Backend
-AI_BACKEND = "ollama"  # o "openai"
-OLLAMA_MODEL_NAME = "qwen2.5:7b"
-
-# Conectividad
-MBOT_CONNECTION_TYPE = "auto"  # "bluetooth", "usb", "auto"
-
-# Audio
-TTS_PREFERRED_VOICE = "Monica"  # Voz española
-SAMPLE_RATE = 16000
-
-# Personalidad del robot
-ROBOT_PERSONALITY = "Eres un robot amigable..."
-```
-
-## 🐛 Resolución de Problemas
-
-### mBot no se conecta
-1. Verificar que el robot esté encendido
-2. Comprobar drivers Bluetooth/USB
-3. Ejecutar `python tests/unit/test_connection.py`
-
-### Audio no funciona
-1. Verificar micrófono/altavoces
-2. Ejecutar `python tests/integration/test_voices.py`
-3. Revisar configuración de PyAudio
-
-### IA no responde
-1. Verificar que Ollama esté ejecutándose: `ollama serve`
-2. Verificar modelo: `ollama list`
-3. Ejecutar `python tests/integration/test_ollama_ai.py`
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit cambios (`git commit -am 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
-
-## 🙏 Agradecimientos
-
-- [Makeblock](https://www.makeblock.com/) por el robot mBot
-- [Ollama](https://ollama.ai/) por la IA local
-- Comunidad open source de Python
+Listo. Si todo está bien, tendrás un mBot parlante y expresivo con un solo comando: `python main.py`.
