@@ -29,6 +29,11 @@ class MBotAssistant:
         )
         self.gesture_engine = GestureEngineFixed(self.mbot_controller)
 
+        if getattr(self.mbot_controller, "is_simulation", False):
+            print("⚠️  Modo simulación activo: se enviarán comandos pero no hay robot físico.")
+        else:
+            print("🤖 Robot físico listo.")
+
         # Estado del sistema
         self.is_running = False
         self.is_conversation_active = False
@@ -174,7 +179,7 @@ class MBotAssistant:
             print(f"🤖 Ejecutando comando: {command}")
 
             # Acción inmediata en paralelo al habla
-            if hasattr(ai_result, 'immediate') and ai_result['immediate']:
+            if "immediate" in ai_result and ai_result["immediate"]:
                 action_thread = threading.Thread(
                     target=self.gesture_engine.immediate_action,
                     args=(command,)
@@ -200,10 +205,15 @@ class MBotAssistant:
 
         else:
             # Conversación normal - solo gesto emocional
-            self.gesture_engine.set_emotion(emotion, len(response_text) * 0.3)
+            duration = max(1.5, len(response_text.split()) * 0.25)
+            self.gesture_engine.set_emotion(emotion, duration)
 
     def _execute_behavior_action(self, action, emotion):
         """Ejecuta acciones específicas de comportamientos"""
+        if not action:
+            self.gesture_engine.set_emotion(emotion, 2)
+            return
+
         action_type = action["type"]
         leds = action["leds"]
         sound = action["sound"]
@@ -211,9 +221,9 @@ class MBotAssistant:
         try:
             if action_type == "wave_hello":
                 self._do_wave_hello()
-            elif action_type == "dance_despacito":
+            elif action_type in {"dance_despacito", "dance_salsa", "dance_breakdance"}:
                 self._do_dance_despacito()
-            elif action_type == "dance_robot":
+            elif action_type in {"dance_robot", "dance_daft_punk"}:
                 self._do_dance_robot()
             elif action_type == "approach_carefully":
                 self._do_approach()
@@ -221,6 +231,16 @@ class MBotAssistant:
                 self._do_polite_retreat()
             elif action_type == "light_show":
                 self._do_light_show()
+            elif action_type in {"spin_show", "spin_greeting"}:
+                self.mbot_controller.perform_spin()
+            elif action_type in {"status_check", "energy_display", "ready_stance"}:
+                self.mbot_controller.perform_light_show()
+            elif action_type in {"listening_pose", "attentive_sway", "ready_listen"}:
+                self.gesture_engine.listening_mode()
+            elif action_type == "wave_goodbye":
+                self._do_wave_hello()
+            elif action_type == "sleep_mode":
+                self.mbot_controller.perform_gesture("neutral")
             else:
                 # Comportamiento genérico
                 self.gesture_engine.set_emotion(emotion, 3)

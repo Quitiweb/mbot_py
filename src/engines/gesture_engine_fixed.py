@@ -121,6 +121,9 @@ class GestureEngineFixed:
         """Pequeño movimiento para mostrar que está vivo durante la escucha"""
         with self.gesture_lock:
             try:
+                if not self.mbot_controller or not self.mbot_controller.mbot:
+                    return
+
                 print("🔄 Movimiento de vida...")
                 # Pequeño movimiento sutil
                 self.mbot_controller.mbot.doMove(20, -20)  # Giro muy leve
@@ -145,6 +148,9 @@ class GestureEngineFixed:
             self.mbot_controller.stop_current_gesture()
 
             try:
+                if not self.mbot_controller or not self.mbot_controller.mbot:
+                    return
+
                 if action_type == "backward":
                     # Retroceder con luces de alerta
                     self.mbot_controller.mbot.doRGBLedOnBoard(0, 255, 255, 0)  # Amarillo
@@ -168,6 +174,13 @@ class GestureEngineFixed:
                     self.mbot_controller.mbot.doRGBLedOnBoard(1, 255, 0, 0)
                     self.mbot_controller.mbot.doBuzzer(300, 200)  # Beep de parada
 
+                elif action_type == "follow":
+                    self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 255, 0)
+                    self.mbot_controller.mbot.doRGBLedOnBoard(1, 0, 255, 0)
+                    self.mbot_controller.mbot.doMove(80, 80)
+                    time.sleep(1.0)
+                    self.mbot_controller.mbot.doMove(0, 0)
+
                 # Volver a estado neutral después de la acción
                 time.sleep(0.5)
                 self.mbot_controller.mbot.doRGBLedOnBoard(0, 0, 0, 0)
@@ -175,6 +188,10 @@ class GestureEngineFixed:
 
             except Exception as e:
                 print(f"❌ Error en acción inmediata: {e}")
+
+    def get_current_emotion(self):
+        """Expone la emoción actual para diagnósticos."""
+        return self.current_emotion
 
     def stop_all(self):
         """Parar todo de forma segura"""

@@ -4,6 +4,37 @@ import random
 from ..protocols.mbot_original_protocol import MBotOriginalProtocol
 from config import *
 
+
+class _SimulatedMBot:
+    """Implementación mínima para ejecutar en modo simulación."""
+
+    def __init__(self):
+        self.connection_type = "simulation"
+
+    def doMove(self, left_speed, right_speed):
+        print(f"[SIM] Move L:{left_speed} R:{right_speed}")
+
+    def doRGBLedOnBoard(self, index, red, green, blue):
+        print(f"[SIM] LED index={index} rgb=({red},{green},{blue})")
+
+    def doBuzzer(self, frequency, duration=0):
+        print(f"[SIM] Buzzer freq={frequency} duration={duration}ms")
+
+    def doMotor(self, port, speed):
+        print(f"[SIM] Motor port={port} speed={speed}")
+
+    def doServo(self, port, slot, angle):
+        print(f"[SIM] Servo port={port} slot={slot} angle={angle}")
+
+    def forceStop(self):
+        print("[SIM] forceStop")
+
+    def emergencyCleanup(self):
+        print("[SIM] emergencyCleanup")
+
+    def close(self):
+        print("[SIM] close")
+
 class MBotController:
     def __init__(self, connection_type="auto", bluetooth_address=None):
         """
@@ -13,17 +44,17 @@ class MBotController:
             connection_type: "auto", "usb", "bluetooth"
             bluetooth_address: Dirección MAC del mBot (opcional)
         """
+        self.is_simulation = False
+
         try:
             print(f"🔗 Intentando conectar mBot ({connection_type})...")
             self.mbot = MBotOriginalProtocol(connection_type)
             print(f"✅ mBot conectado correctamente via {self.mbot.connection_type}")
         except Exception as e:
             print(f"❌ Error conectando mBot: {e}")
-            print("💡 Sugerencias:")
-            print("   - Para Bluetooth: Asegúrate de que el mBot esté emparejado")
-            print("   - Para USB: Verifica la conexión USB y drivers CH340")
-            print("   - Prueba con: python3 test_connection.py")
-            self.mbot = None
+            print("💡 Activando modo simulación: el robot real no está disponible.")
+            self.mbot = _SimulatedMBot()
+            self.is_simulation = True
 
         # Estado del robot
         self.current_gesture = None
@@ -36,7 +67,8 @@ class MBotController:
         if not self.mbot:
             return
 
-        print(f"🤖 Ejecutando comando: {command}")
+        mode = "simulación" if self.is_simulation else "hardware"
+        print(f"🤖 Ejecutando comando: {command} ({mode})")
 
         try:
             if command == "forward":
@@ -81,6 +113,9 @@ class MBotController:
             elif command == "light_show":
                 self.perform_light_show()
 
+            elif command == "follow":
+                self.perform_follow()
+
         except Exception as e:
             print(f"❌ Error ejecutando comando {command}: {e}")
 
@@ -114,9 +149,23 @@ class MBotController:
     def _execute_simple_gesture(self, gesture):
         """Ejecuta un gesto de forma simple sin hilos"""
         try:
-            movement = gesture["movement"]
-            leds = gesture["leds"]
-            sound = gesture["sound"]
+            movement = gesture.get("movement", "stop")
+            leds = gesture.get("leds")
+            sound = gesture.get("sound")
+
+            movement_map = {
+                "attentive_pose": "stop",
+                "wave_motion": "wave",
+                "dance_sequence": "spin",
+                "follow_mode": "slight_move",
+                "happy_bounce": "bounce",
+                "ready_stance": "slight_move",
+                "approach_carefully": "slight_move",
+                "back_away_polite": "back_away",
+                "listening_pose": "stop",
+            }
+
+            movement = movement_map.get(movement, movement)
 
             # Ejecutar movimiento
             if movement == "bounce":
@@ -127,11 +176,15 @@ class MBotController:
                 self._simple_move()
             elif movement == "spin":
                 self._simple_spin()
+            elif movement == "wave":
+                self._simple_wave()
             elif movement == "head_shake":
                 self._simple_head_shake()
             elif movement == "back_away":
                 self._simple_back_away()
             elif movement == "stop":
+                self._simple_stop()
+            else:
                 self._simple_stop()
 
             # Ejecutar LEDs
@@ -187,6 +240,21 @@ class MBotController:
         time.sleep(1.2)  # Tiempo suficiente para giro completo
         self.mbot.doMove(0, 0)
 
+    def _simple_wave(self):
+        """Movimiento tipo ola con pequeños giros"""
+        if self._stop_requested or not self.mbot:
+            return
+        for _ in range(3):
+            if self._stop_requested:
+                break
+            self.mbot.doMove(60, -60)
+            time.sleep(0.2)
+            if self._stop_requested:
+                break
+            self.mbot.doMove(-60, 60)
+            time.sleep(0.2)
+        self.mbot.doMove(0, 0)
+
     def _simple_head_shake(self):
         """Movimiento de "no" (confusión)"""
         if self._stop_requested or not self.mbot:
@@ -225,23 +293,44 @@ class MBotController:
             return
 
         try:
-            if led_pattern == "rainbow":
-                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
-                for color in colors:
-                    if self._stop_requested:
-                        break
-                    self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
-                    self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
-                    time.sleep(0.5)
+            if not led_pattern:
+                self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+                return
 
-            elif led_pattern == "flash_multicolor":
-                colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
-                for _ in range(3):  # 3 cycles of flashing
+            palette_map = {
+                "rainbow": [(255, 0, 0), (0, 255, 0), (0, 0, 255)],
+                "rainbow_wave": [(255, 0, 0), (255, 80, 0), (255, 255, 0), (0, 255, 0), (0, 0, 255)],
+                "rainbow_explosion": [(255, 0, 0), (255, 255, 0), (0, 255, 0), (0, 255, 255), (0, 0, 255), (255, 0, 255)],
+                "latino_colors": [(255, 140, 0), (255, 0, 0), (255, 215, 0)],
+                "electronic_flash": [(0, 255, 255), (0, 0, 255), (255, 0, 255)],
+                "robotic_sequence": [(255, 255, 255), (0, 0, 255)],
+                "warm_colors": [(255, 69, 0), (255, 165, 0)],
+                "street_colors": [(255, 0, 255), (0, 255, 255)],
+                "system_green": [(0, 255, 0)],
+                "battery_indicator": [(0, 255, 0), (255, 255, 0), (255, 0, 0)],
+                "ready_blue": [(0, 100, 255)],
+                "listening_pulse": [(0, 120, 255)],
+                "attention_blue": [(0, 0, 255)],
+                "ear_mode": [(0, 180, 255)],
+                "goodbye_fade": [(255, 100, 0), (0, 0, 0)],
+                "sleep_dim": [(20, 20, 50)],
+                "welcome_colors": [(0, 255, 120), (0, 120, 255)],
+                "party_lights": [(255, 0, 255), (0, 255, 255), (255, 255, 0)],
+                "follow_green": [(0, 255, 0)],
+                "approach_blue": [(0, 120, 255)],
+                "retreat_yellow": [(255, 255, 0)],
+                "stay_white": [(255, 255, 255)],
+            }
+
+            if led_pattern == "flash_multicolor":
+                colors = palette_map.get("party_lights")
+                for _ in range(3):
                     for color in colors:
                         if self._stop_requested:
                             break
-                        self.mbot.doRGBLedOnBoard(0, color[0], color[1], color[2])
-                        self.mbot.doRGBLedOnBoard(1, color[0], color[1], color[2])
+                        self.mbot.doRGBLedOnBoard(0, *color)
+                        self.mbot.doRGBLedOnBoard(1, *color)
                         time.sleep(0.2)
 
             elif led_pattern == "blue_pulse":
@@ -250,7 +339,6 @@ class MBotController:
                 time.sleep(1)
 
             elif led_pattern == "blue_breathing":
-                # Efecto de "respiración" azul
                 for intensity in [50, 100, 150, 255, 150, 100, 50]:
                     if self._stop_requested:
                         break
@@ -259,7 +347,6 @@ class MBotController:
                     time.sleep(0.3)
 
             elif led_pattern == "yellow_blink":
-                # Parpadeo amarillo (confusión)
                 for _ in range(6):
                     if self._stop_requested:
                         break
@@ -270,20 +357,17 @@ class MBotController:
                     self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
                     time.sleep(0.2)
 
-            elif led_pattern == "red_dim":
-                # Rojo tenue (tristeza)
-                self.mbot.doRGBLedOnBoard(0, 80, 0, 0)
-                self.mbot.doRGBLedOnBoard(1, 80, 0, 0)
-                time.sleep(1.5)
+            else:
+                colors = palette_map.get(led_pattern, [(255, 255, 255)])
+                for color in colors:
+                    if self._stop_requested:
+                        break
+                    self.mbot.doRGBLedOnBoard(0, *color)
+                    self.mbot.doRGBLedOnBoard(1, *color)
+                    time.sleep(0.3)
 
-            elif led_pattern == "white_steady":
-                self.mbot.doRGBLedOnBoard(0, 255, 255, 255)
-                self.mbot.doRGBLedOnBoard(1, 255, 255, 255)
-                time.sleep(1)
-
-            # Apagar LEDs al final
             if not self._stop_requested:
-                time.sleep(0.5)
+                time.sleep(0.2)
             self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
             self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
@@ -296,36 +380,61 @@ class MBotController:
             return
 
         try:
-            if sound_type == "beep_happy":
-                self.mbot.doBuzzer(523, 200)  # Do
+            sound_map = {
+                "greeting_beep": "beep_happy",
+                "friendly_chirp": "beep_happy",
+                "hello_melody": "beep_fast",
+                "despacito_beat": "beep_fast",
+                "electronic_beat": "beep_fast",
+                "robot_dance_beat": "beep_fast",
+                "salsa_rhythm": "beep_fast",
+                "hip_hop_beat": "beep_fast",
+                "gentle_beep": "beep_low",
+                "sorry_beep": "beep_confused",
+                "follow_chirp": "beep_happy",
+                "confirm_beep": "beep_happy",
+                "show_music": "beep_fast",
+                "playful_beep": "beep_happy",
+                "party_mix": "beep_fast",
+                "playful_chirp": "beep_happy",
+                "healthy_beep": "beep_happy",
+                "power_up": "beep_fast",
+                "ready_chirp": "beep_happy",
+                "farewell_melody": "beep_sad",
+                "sleepy_beep": "beep_low",
+                "greeting_melody": "beep_happy",
+                "music_beat": "beep_fast",
+                "follow_beep": "beep_happy",
+            }
+
+            mapped = sound_map.get(sound_type, sound_type)
+
+            if mapped == "beep_happy":
+                self.mbot.doBuzzer(523, 200)
                 if not self._stop_requested:
                     time.sleep(0.3)
-                    self.mbot.doBuzzer(659, 200)  # Mi
+                    self.mbot.doBuzzer(659, 200)
 
-            elif sound_type == "beep_fast":
-                # Pitidos rápidos de emoción
-                frequencies = [523, 659, 784, 1047]  # Do, Mi, Sol, Do alto
-                for freq in frequencies:
+            elif mapped == "beep_fast":
+                for freq in [523, 659, 784, 1047]:
                     if self._stop_requested:
                         break
                     self.mbot.doBuzzer(freq, 150)
                     time.sleep(0.1)
 
-            elif sound_type == "beep_confused":
-                # Sonido de confusión (tonos discordantes)
+            elif mapped == "beep_confused":
                 self.mbot.doBuzzer(400, 300)
                 if not self._stop_requested:
                     time.sleep(0.1)
                     self.mbot.doBuzzer(300, 300)
 
-            elif sound_type == "beep_sad":
-                # Sonido triste (tono descendente)
-                self.mbot.doBuzzer(523, 400)  # Do
+            elif mapped == "beep_sad":
+                self.mbot.doBuzzer(523, 400)
                 if not self._stop_requested:
                     time.sleep(0.2)
-                    self.mbot.doBuzzer(392, 400)  # Sol bajo
+                    self.mbot.doBuzzer(392, 400)
 
-            elif sound_type == "beep_low":
+            elif mapped == "beep_low":
                 self.mbot.doBuzzer(200, 300)
 
         except Exception as e:
@@ -573,6 +682,26 @@ class MBotController:
 
         self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
         self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
+
+    def perform_follow(self):
+        """Modo seguir: pequeños avances y paradas"""
+        if not self.mbot:
+            return
+
+        print("🚶 Modo seguir activado")
+        try:
+            for _ in range(3):
+                if self._stop_requested:
+                    break
+                self.mbot.doRGBLedOnBoard(0, 0, 255, 0)
+                self.mbot.doRGBLedOnBoard(1, 0, 255, 0)
+                self.mbot.doMove(80, 80)
+                time.sleep(0.6)
+                self.mbot.doMove(0, 0)
+                time.sleep(0.2)
+        finally:
+            self.mbot.doRGBLedOnBoard(0, 0, 0, 0)
+            self.mbot.doRGBLedOnBoard(1, 0, 0, 0)
 
     def stop_gesture(self):
         """Detiene el gesto actual inmediatamente - VERSIÓN MEJORADA"""

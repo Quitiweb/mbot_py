@@ -361,4 +361,7 @@ if __name__ == "__main__":
         result = brain.process_input(test_input)
         print(f"🤖 Respuesta: {result['response']}")
         print(f"😊 Emoción: {result['emotion']}")
-        print(f"🎭 Gesto: {result['gesture']}")
+        if result["type"] == "command":
+            print(f"� Comando: {result['command']}")
+        elif result["type"] == "behavior":
+            print(f"�🎭 Comportamiento: {result['behavior']}")
