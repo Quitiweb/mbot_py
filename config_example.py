@@ -3,9 +3,9 @@
 Copia este archivo como `config.py` y ajusta los valores para tu robot.
 """
 
-MBOT_CONNECTION_TYPE = "usb"  # "usb" o "ble"
-MBOT_BLUETOOTH_ADDRESS = None  # Requerido solo si usas BLE
-MBOT_PORT = None               # Usa algo como "/dev/tty.usbmodemXXXX" si deseas fijarlo
+MBOT_CONNECTION_TYPE = "bluetooth"  # "usb", "bluetooth" o "auto"
+MBOT_BLUETOOTH_ADDRESS = None  # Se detecta automáticamente buscando 'makeblock' o 'mbot'
+MBOT_PORT = None               # Solo para USB: "/dev/tty.usbmodemXXXX" o similar
 MBOT_BAUDRATE = 115200
 
 SENSOR_PORTS = {

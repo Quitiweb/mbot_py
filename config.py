@@ -1,8 +1,8 @@
 # Configuración mínima para el nuevo flujo del mBot
 
 # Conexión
-MBOT_CONNECTION_TYPE = "usb"  # "usb" o "bluetooth" (usb recomendado para simplificar)
-MBOT_BLUETOOTH_ADDRESS = None
+MBOT_CONNECTION_TYPE = "bluetooth"  # "usb", "bluetooth" o "auto"
+MBOT_BLUETOOTH_ADDRESS = None  # Se detecta automáticamente
 MBOT_PORT = None
 MBOT_BAUDRATE = 115200
 
