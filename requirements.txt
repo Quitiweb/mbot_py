@@ -1,9 +1,4 @@
 pyserial
-openai
 pyaudio
 SpeechRecognition
-pyttsx3
-python-dotenv
-requests
-pybluez
 bleak

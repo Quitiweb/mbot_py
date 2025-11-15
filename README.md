@@ -1,69 +1,70 @@
-# mBot Voice Assistant
+# mBot Explorer
 
-Convierte tu mBot en un asistente de voz que entiende comandos en español, responde con una personalidad breve y controla motores, LEDs y sonidos usando IA local (Ollama).
+Versión mínima del proyecto mBot enfocada en un flujo robótico sencillo:
 
-## Qué hace
-
-- Escucha la palabra clave “robot” y mantiene conversaciones cortas.
-- Traduce órdenes como “adelante”, “gira”, “baila” o “sígueme” en movimientos reales.
-- Expresa emociones mediante LEDs y sonidos mientras habla desde el portátil.
-- Funciona totalmente offline gracias a Ollama y al modelo `qwen2.5:7b`.
+- **Modo exploración** siempre activo (estilo Roomba): el robot avanza, detecta obstáculos con el ultrasonido y gira cuando algo se interpone.
+- **Biblioteca de sonidos**: emite pitidos cortos tipo R2-D2 mientras se mueve para mostrar “vida”.
+- **Modo seguir**: al recibir la orden adecuada, mantiene una distancia segura con la persona/objeto delante usando el mismo sensor.
+- **Comandos por voz súper simples** (opcional): di “EME BOT” para que se detenga y, acto seguido, da una instrucción corta (explorar, seguir, parar o bailar).
 
 ## Requisitos
 
-- macOS / Linux / Windows con Python 3.10 o superior.
-- mBot encendido y conectado por Bluetooth LE (preferido) o USB.
-- Micrófono y altavoces en el ordenador.
-- [Ollama](https://ollama.ai) instalado con el modelo `qwen2.5:7b` descargado.
-- Dependencias Python listadas en `requirements.txt` (incluyen PyAudio, SpeechRecognition, Bleak, etc.).
+- macOS, Linux o Windows con Python 3.10+.
+- mBot encendido y conectado preferiblemente por USB (la lectura de sensores solo está soportada así de momento).
+- Módulo ultrasónico conectado al puerto/slot indicado en `config.py` (por defecto puerto 1, slot 3).
+- Micrófono si quieres usar los comandos de voz (PyAudio + SpeechRecognition).
+- Dependencias listadas en `requirements.txt` (`pyserial`, `pyaudio`, `SpeechRecognition`, `bleak`).
 
-## Puesta en marcha
+## Configuración rápida
 
 ```bash
-# 1) Clona el repo y entra en la carpeta
 git clone <url> mbot_project
 cd mbot_project
 
-# 2) Crea y activa un entorno virtual
 python -m venv venv
 source venv/bin/activate      # macOS / Linux
-# .\venv\Scripts\activate    # Windows
+# .\venv\Scripts\activate   # Windows
 
-# 3) Instala las dependencias
 pip install -r requirements.txt
-
-# 4) Copia y ajusta la configuración
-cp config_example.py config.py
-# Edita config.py para poner la voz, tipo de conexión, etc.
-
-# 5) Prepara la IA local una vez
-ollama pull qwen2.5:7b
+cp config_example.py config.py   # Si lo necesitas como plantilla
 ```
 
-## Cómo ejecutarlo
+Edita `config.py` para ajustar:
+
+- `SENSOR_PORTS`: puerto/slot del ultrasonido frontal (y opcionales left/right si tienes más sensores).
+- `EXPLORATION_SETTINGS`: velocidades, tiempos de giro y distancia a la que se considera obstáculo.
+- `FOLLOW_SETTINGS`: ventana de distancia aceptable en modo seguir.
+- Parámetros de voz (`VOICE_ENABLED`, `WAKE_WORD`, idioma, etc.) si quieres usar el micrófono.
+
+## Ejecución
 
 ```bash
-# Lanza Ollama si no está en marcha (una sola vez por sesión)
-ollama serve &
-
-# Activa el entorno virtual si hace falta
 source venv/bin/activate
-
-# Arranca el asistente
 python main.py
 ```
 
-1. Enciende el mBot y espera a que Bluetooth/USB se conecte.
-2. Di “robot” para activarlo. El asistente responde por voz y muestra LEDs azules.
-3. Da comandos cortos como “avanza”, “gira a la derecha”, “baila”, “detente” o conversa brevemente.
-4. Di “adiós” o pulsa `Ctrl+C` para salir. Usa `mbot_controller.py` si quieres probar comandos básicos sin voz.
+1. El robot entra automáticamente en **modo exploración**.
+2. Opcional: di “EME BOT” → el robot se detendrá, hará un destello azul y escuchará la orden.
+3. Ordena una de las cuatro acciones soportadas:
+	- **“explora”**: vuelve al modo por defecto.
+	- **“sígueme” / “seguir”**: activa el modo seguimiento.
+	- **“para” / “detente”**: se queda quieto hasta nueva orden.
+	- **“baila”**: ejecuta el mini baile incorporado y luego retoma la exploración.
+4. Pulsa `Ctrl+C` para salir y cerrar la conexión.
 
-## Pruebas rápidas (opcional)
+## Pruebas
+
+Incluimos un test rápido para la lógica del parser de comandos:
 
 ```bash
-python tests/test_stop.py        # Comprueba movimiento básico
-python tests/test_dance.py       # Lanza el baile manualmente
-python -m pytest tests -k stop   # Ejecuta un subconjunto de tests
+python -m pytest tests -v
 ```
 
-Listo. Si todo está bien, tendrás un mBot parlante y expresivo con un solo comando: `python main.py`.
+El resto del comportamiento depende del hardware, así que se prueba directamente con el robot encendido.
+
+## Qué quedó fuera del alcance
+
+- Conversaciones largas, IA conversacional, TTS, gestos complejos, etc. fueron eliminados para mantener el proyecto ligero.
+- Solo usamos el sensor ultrasónico frontal por USB. Añadir BLE o más sensores requerirá trabajo adicional, pero la estructura ya está limpia para seguir iterando poco a poco.
+
+Con esto tienes una base sencilla sobre la que seguir construyendo modos autónomos más avanzados.

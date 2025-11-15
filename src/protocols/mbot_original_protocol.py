@@ -7,6 +7,7 @@ import signal
 import sys
 import asyncio
 import struct
+import time
 from time import sleep
 import threading
 import serial
@@ -35,6 +36,8 @@ class MBotOriginalProtocol:
         self.ble_connected = False
         self.ble_thread = None
         self.ble_loop = None
+        self._request_index = 1
+        self._serial_buffer = bytearray()
 
         print(f"🤖 Iniciando mBot con protocolo ORIGINAL (modo: {connection_type})")
 
@@ -182,6 +185,77 @@ class MBotOriginalProtocol:
             return False
         except:
             return False
+
+    # ------------------------------------------------------------------
+    # Lectura simplificada de sensores (solo USB en esta versión)
+    # ------------------------------------------------------------------
+    def _next_request_index(self):
+        self._request_index = (self._request_index + 1) % 255
+        if self._request_index == 0:
+            self._request_index = 1
+        return self._request_index
+
+    def get_ultrasonic_distance(self, port=1, slot=3, timeout=0.5):
+        if self.connection_type != "usb" or not self.serial:
+            raise NotImplementedError("La lectura del sensor ultrasónico solo está disponible por USB en esta versión simplificada.")
+
+        idx = self._next_request_index()
+        packet = bytearray([0xff, 0x55, 0x04, idx, 0x01, 0x01, port, slot])
+        self.__writePackage(packet)
+        response = self._read_serial_frame(idx, timeout)
+        if not response:
+            return None
+        _, value = response
+        return value
+
+    def _read_serial_frame(self, expected_idx, timeout):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if self.serial.in_waiting:
+                data = self.serial.read(self.serial.in_waiting)
+                self._serial_buffer.extend(data)
+
+            parsed = self._try_parse_frame(expected_idx)
+            if parsed:
+                return parsed
+
+            sleep(0.01)
+        return None
+
+    def _try_parse_frame(self, expected_idx):
+        buffer = self._serial_buffer
+        while len(buffer) >= 3:
+            if buffer[0] != 0xff or buffer[1] != 0x55:
+                buffer.pop(0)
+                continue
+
+            length = buffer[2]
+            total = length + 3
+            if len(buffer) < total:
+                return None
+
+            frame = bytes(buffer[:total])
+            del buffer[:total]
+
+            idx = frame[3]
+            if expected_idx is not None and idx != expected_idx:
+                # Descartar respuestas antiguas
+                continue
+
+            data_type = frame[4]
+            payload = frame[5:]
+            value = self._decode_value(data_type, payload)
+            return idx, value
+        return None
+
+    def _decode_value(self, data_type, payload):
+        if data_type == 1 and payload:
+            return payload[0]
+        if data_type == 2 and len(payload) >= 4:
+            return struct.unpack('f', payload[:4])[0]
+        if data_type == 3 and len(payload) >= 2:
+            return struct.unpack('h', payload[:2])[0]
+        return None
 
     def short2bytes(self, sval):
         """Conversión ORIGINAL de short a bytes"""

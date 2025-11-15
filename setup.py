@@ -9,11 +9,8 @@ setup(
     install_requires=[
         "pyserial>=3.5",
         "bleak>=0.20.0",
-        "requests>=2.31.0",
         "pyaudio>=0.2.11",
         "speechrecognition>=3.10.0",
-        "pyttsx3>=2.90",
-        "python-dotenv>=1.0.0",
     ],
     python_requires=">=3.8",
     entry_points={

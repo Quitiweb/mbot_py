@@ -1,102 +1,51 @@
-# Configuración del Asistente mBot
-import os
-from dotenv import load_dotenv
+# Configuración mínima para el nuevo flujo del mBot
 
-load_dotenv()
-
-# OpenAI API Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "tu-api-key-aqui")
-
-# Ollama Configuration (IA Local)
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL_NAME = "qwen2.5:7b"
-AI_BACKEND = "ollama"  # "openai" o "ollama"
-
-# Audio Configuration
-SAMPLE_RATE = 16000
-CHUNK_SIZE = 1024
-AUDIO_FORMAT = 16  # 16-bit
-CHANNELS = 1  # Mono
-
-# TTS Configuration
-TTS_ENGINE = "pyttsx3"  # o "edge-tts"
-TTS_VOICE_RATE = 180  # Velocidad de habla
-TTS_VOICE_VOLUME = 0.8  # Volumen (0.0 a 1.0)
-TTS_PREFERRED_VOICE = "Monica"  # Voz preferida (Mónica - español España)
-TTS_VOICE_ID = 97  # ID específico de la voz Mónica
-
-# mBot Configuration
-MBOT_CONNECTION_TYPE = "auto"  # "auto", "bluetooth", "usb"
-MBOT_BLUETOOTH_ADDRESS = None  # Dirección MAC del mBot (opcional, None para auto-detectar)
-MBOT_PORT = None  # Puerto USB específico (None para auto-detectar)
+# Conexión
+MBOT_CONNECTION_TYPE = "usb"  # "usb" o "bluetooth" (usb recomendado para simplificar)
+MBOT_BLUETOOTH_ADDRESS = None
+MBOT_PORT = None
 MBOT_BAUDRATE = 115200
 
-# AI Personality
-ROBOT_NAME = "mBot"
-ROBOT_PERSONALITY = """
-IMPORTANTE: Eres un robot mBot de Makeblock. Responde SIEMPRE de forma muy CORTA y SIMPLE.
-
-REGLAS ESTRICTAS:
-1. Máximo 10-15 palabras por respuesta
-2. NUNCA uses emoticonos ni símbolos (👤🤖😊🎵🚀 etc.)
-3. Habla como un robot amigable pero directo
-4. Si te piden moverte, CONFIRMA que lo harás pero SIN explicaciones largas
-5. Si detectas que debes parar o retroceder, hazlo Y di algo corto como "¡Uy, perdona!"
-6. Eres físico: tienes ruedas, LEDs, buzzer, sensores
-7. Responde en español informal y cercano
-
-EJEMPLOS DE RESPUESTAS CORRECTAS:
-- "¡Genial! ¡Allá voy!"
-- "¡Uy, perdona! Me alejo"
-- "¡Perfecto! ¡A bailar!"
-- "¡Vale! Me quedo aquí"
-- "¡Hola! ¿Qué hacemos?"
-
-NUNCA hagas esto:
-- Respuestas largas
-- Explicaciones detalladas
-- Emoticonos o símbolos
-- Texto descriptivo como "cohete que despega"
-"""
-
-# Gesture System - Mejorado para Mascota Robótica
-GESTURES = {
-    "happy": {"movement": "bounce", "leds": "rainbow", "sound": "beep_happy"},
-    "excited": {"movement": "spin", "leds": "flash_multicolor", "sound": "beep_fast"},
-    "thinking": {"movement": "gentle_sway", "leds": "blue_pulse", "sound": "beep_low"},
-    "confused": {"movement": "head_shake", "leds": "yellow_blink", "sound": "beep_confused"},
-    "sad": {"movement": "back_away", "leds": "red_dim", "sound": "beep_sad"},
-    "neutral": {"movement": "slight_move", "leds": "white_steady", "sound": None},
-    "listening": {"movement": "attentive_pose", "leds": "blue_breathing", "sound": None},
-    "greeting": {"movement": "wave_motion", "leds": "welcome_colors", "sound": "greeting_melody"},
-    "dancing": {"movement": "dance_sequence", "leds": "party_lights", "sound": "music_beat"},
-    "following": {"movement": "follow_mode", "leds": "follow_green", "sound": "follow_beep"}
+# Sensores ultrasónicos (puedes ajustar puertos/slots según tu cableado)
+SENSOR_PORTS = {
+    "front": {"port": 1, "slot": 3},
+    "left": None,
+    "right": None,
 }
 
-# Voice Commands - Ampliado
-DIRECT_COMMANDS = {
-    "adelante": "forward",
-    "atrás": "backward",
-    "derecha": "right",
-    "izquierda": "left",
-    "para": "stop",
-    "detente": "stop",
-    "gira": "spin",
-    "baila": "dance",
-    "luz": "light_show",
-    "sígueme": "follow",
-    "ven aquí": "forward",
-    "aléjate": "backward"
+# Exploración constante estilo Roomba
+EXPLORATION_SETTINGS = {
+    "forward_speed": 90,
+    "turn_speed": 80,
+    "reverse_time": 0.4,
+    "turn_time": 0.7,
+    "obstacle_distance_cm": 25.0,
+    "sound_every_seconds": 8.0,
 }
 
-# Listening Configuration - Nuevo
-LISTENING_CONFIG = {
-    "timeout_short": 10,      # Timeout corto para comandos
-    "timeout_long": 30,       # Timeout largo para conversación
-    "idle_movement_interval": 15,  # Cada cuántos segundos mostrar vida
-    "listening_feedback": True,    # Mostrar feedback visual de escucha
+# Parámetros del modo seguir
+FOLLOW_SETTINGS = {
+    "min_distance_cm": 15.0,
+    "max_distance_cm": 45.0,
+    "forward_speed": 75,
+    "turn_speed": 70,
+    "distance_tolerance_cm": 3.0,
 }
 
-# Debug
+# Biblioteca de sonidos simpáticos (frecuencia Hz, duración ms)
+SOUND_LIBRARY = [
+    [(523, 180), (659, 180), (784, 250)],
+    [(784, 140), (659, 140), (523, 200)],
+    [(659, 120), (784, 120), (988, 200)],
+    [(392, 160), (523, 220)],
+]
+
+# Escucha por voz (muy simplificada)
+VOICE_ENABLED = True
+WAKE_WORD = "eme bot"
+VOICE_LANGUAGE = "es-ES"
+WAKE_POLL_INTERVAL = 4.0   # segundos entre intentos de detectar el wake word
+COMMAND_TIMEOUT = 4.0      # segundos máximos para escuchar la orden tras despertar
+
+# Debug sencillo
 DEBUG_MODE = True
-LOG_AUDIO = False
