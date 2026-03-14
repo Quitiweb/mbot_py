@@ -1,7 +1,9 @@
 # Configuración mínima para el nuevo flujo del mBot
 
 # Conexión
-MBOT_CONNECTION_TYPE = "bluetooth"  # "usb", "bluetooth" o "auto"
+# Nota: en esta implementación simplificada, la lectura de sensores
+# ultrasónicos está soportada por USB.
+MBOT_CONNECTION_TYPE = "auto"  # "usb", "bluetooth" o "auto"
 MBOT_BLUETOOTH_ADDRESS = None  # Se detecta automáticamente
 MBOT_PORT = None
 MBOT_BAUDRATE = 115200
@@ -11,15 +13,22 @@ SENSOR_PORTS = {
     "front": {"port": 1, "slot": 3},
     "left": None,
     "right": None,
+    # Opcional: sensor mirando al suelo. Si deja de ver suelo, se activa
+    # la parada de seguridad.
+    "down": None,
 }
 
 # Exploración constante estilo Roomba
 EXPLORATION_SETTINGS = {
     "forward_speed": 90,
     "turn_speed": 80,
+    "steer_speed": 65,
     "reverse_time": 0.4,
     "turn_time": 0.7,
     "obstacle_distance_cm": 25.0,
+    "side_obstacle_distance_cm": 20.0,
+    "corner_recovery_seconds": 1.2,
+    "lift_distance_cm": 80.0,
     "sound_every_seconds": 8.0,
 }
 
@@ -29,6 +38,9 @@ FOLLOW_SETTINGS = {
     "max_distance_cm": 45.0,
     "forward_speed": 75,
     "turn_speed": 70,
+    "interaction_min_cm": 10.0,
+    "interaction_max_cm": 30.0,
+    "interaction_hold_steps": 3,
     "distance_tolerance_cm": 3.0,
 }
 
@@ -41,7 +53,7 @@ SOUND_LIBRARY = [
 ]
 
 # Escucha por voz (muy simplificada)
-VOICE_ENABLED = True
+VOICE_ENABLED = False
 WAKE_WORD = "eme bot"
 VOICE_LANGUAGE = "es-ES"
 WAKE_POLL_INTERVAL = 4.0   # segundos entre intentos de detectar el wake word

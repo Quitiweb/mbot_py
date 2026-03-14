@@ -12,7 +12,7 @@ Versión mínima del proyecto mBot enfocada en un flujo robótico sencillo:
 - macOS, Linux o Windows con Python 3.10+.
 - mBot encendido y **conectado por Bluetooth** (el sistema busca automáticamente dispositivos con "makeblock" o "mbot" en el nombre).
 - Módulo ultrasónico conectado al puerto/slot indicado en `config.py` (por defecto puerto 1, slot 3).
-  - **Nota**: La lectura de sensores ultrasónicos solo funciona por USB en esta versión; si usas Bluetooth, el modo exploración seguirá funcionando sin detección de obstáculos, o puedes alternar entre USB (para sensores) y BLE (para movimiento).
+	- La lectura de sensores ultrasónicos funciona por USB y también por Bluetooth LE en esta versión.
 - Micrófono si quieres usar los comandos de voz (PyAudio + SpeechRecognition).
 - Dependencias listadas en `requirements.txt` (`pyserial`, `pyaudio`, `SpeechRecognition`, `bleak`).
 
@@ -49,7 +49,7 @@ python main.py
 
 El sistema buscará automáticamente el mBot por Bluetooth y se conectará (verás mensajes como "🔵 Conectando a Makeblock...").
 
-1. El robot entra automáticamente en **modo exploración** (sin detección de obstáculos si usas BLE).
+1. El robot entra automáticamente en **modo exploración** con detección de obstáculos.
 2. Opcional: di "EME BOT" → el robot se detendrá, hará un destello azul y escuchará la orden.
 3. Ordena una de las cuatro acciones soportadas:
 	- **"explora"**: vuelve al modo por defecto.
@@ -71,7 +71,6 @@ El resto del comportamiento depende del hardware, así que se prueba directament
 ## Qué quedó fuera del alcance
 
 - Conversaciones largas, IA conversacional, TTS, gestos complejos, etc. fueron eliminados para mantener el proyecto ligero.
-- **Lectura de sensores por Bluetooth**: en esta versión simplificada, los sensores ultrasónicos solo funcionan por USB. Para usar BLE con sensores necesitarás implementar la lectura asíncrona de respuestas desde el robot.
-- Si deseas exploración autónoma **con detección de obstáculos**, usa `MBOT_CONNECTION_TYPE = "usb"` en `config.py`.
+- Si notas lecturas inestables por BLE en entornos con interferencias, cambia a `MBOT_CONNECTION_TYPE = "usb"` para máxima robustez.
 
 Con esto tienes una base sencilla sobre la que seguir construyendo modos autónomos más avanzados.

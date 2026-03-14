@@ -10,6 +10,7 @@ import struct
 import time
 from time import sleep
 import threading
+from threading import Lock
 import serial
 import serial.tools.list_ports
 
@@ -33,11 +34,13 @@ class MBotOriginalProtocol:
         self.ble_client = None
         self.ble_device = None
         self.ble_write_char = "0000ffe3-0000-1000-8000-00805f9b34fb"
+        self.ble_notify_char = None
         self.ble_connected = False
         self.ble_thread = None
         self.ble_loop = None
         self._request_index = 1
-        self._serial_buffer = bytearray()
+        self._incoming_buffer = bytearray()
+        self._buffer_lock = Lock()
 
         print(f"🤖 Iniciando mBot con protocolo ORIGINAL (modo: {connection_type})")
 
@@ -118,6 +121,9 @@ class MBotOriginalProtocol:
             if not self.ble_client.is_connected:
                 return
 
+            await self._setup_ble_characteristics()
+            await self._start_ble_notifications()
+
             self.ble_device = device
             self.ble_connected = True
 
@@ -127,6 +133,52 @@ class MBotOriginalProtocol:
 
         except Exception as e:
             print(f"🔵 Error en conexión: {e}")
+
+    async def _setup_ble_characteristics(self):
+        """Detecta características de escritura y notificación en BLE."""
+        try:
+            services = self.ble_client.services
+        except Exception:
+            # En algunas plataformas Bleak inicializa servicios de forma diferida.
+            services = await self.ble_client.get_services()
+
+        write_candidate = None
+        notify_candidate = None
+
+        for service in services:
+            for char in service.characteristics:
+                props = set(char.properties)
+                if not write_candidate and ("write" in props or "write-without-response" in props):
+                    write_candidate = char.uuid
+                if not notify_candidate and ("notify" in props or "indicate" in props):
+                    notify_candidate = char.uuid
+
+        if write_candidate:
+            self.ble_write_char = write_candidate
+        if notify_candidate:
+            self.ble_notify_char = notify_candidate
+
+        # UUID habitual de notificación para HM-10/Makeblock.
+        if not self.ble_notify_char:
+            self.ble_notify_char = "0000ffe2-0000-1000-8000-00805f9b34fb"
+
+    async def _start_ble_notifications(self):
+        """Activa notificaciones BLE para poder recibir respuestas de sensores."""
+        if not self.ble_notify_char:
+            return
+
+        try:
+            await self.ble_client.start_notify(self.ble_notify_char, self._on_ble_notification)
+            print(f"🔵 Notificaciones activas en {self.ble_notify_char}")
+        except Exception as exc:
+            print(f"🔵 No se pudieron activar notificaciones BLE: {exc}")
+
+    def _on_ble_notification(self, _sender, data):
+        """Callback de notificaciones BLE: acumula bytes para parseo de frames."""
+        if not data:
+            return
+        with self._buffer_lock:
+            self._incoming_buffer.extend(data)
 
     def _try_usb_connection(self):
         """Conecta por USB usando el método original"""
@@ -187,7 +239,7 @@ class MBotOriginalProtocol:
             return False
 
     # ------------------------------------------------------------------
-    # Lectura simplificada de sensores (solo USB en esta versión)
+    # Lectura de sensores (USB y BLE)
     # ------------------------------------------------------------------
     def _next_request_index(self):
         self._request_index = (self._request_index + 1) % 255
@@ -196,13 +248,17 @@ class MBotOriginalProtocol:
         return self._request_index
 
     def get_ultrasonic_distance(self, port=1, slot=3, timeout=0.5):
-        if self.connection_type != "usb" or not self.serial:
-            raise NotImplementedError("La lectura del sensor ultrasónico solo está disponible por USB en esta versión simplificada.")
-
         idx = self._next_request_index()
         packet = bytearray([0xff, 0x55, 0x04, idx, 0x01, 0x01, port, slot])
         self.__writePackage(packet)
-        response = self._read_serial_frame(idx, timeout)
+
+        if self.connection_type == "usb" and self.serial:
+            response = self._read_serial_frame(idx, timeout)
+        elif self.connection_type == "bluetooth" and self.ble_connected:
+            response = self._read_ble_frame(idx, timeout)
+        else:
+            raise RuntimeError("No hay conexión activa para leer sensores.")
+
         if not response:
             return None
         _, value = response
@@ -213,7 +269,8 @@ class MBotOriginalProtocol:
         while time.time() < deadline:
             if self.serial.in_waiting:
                 data = self.serial.read(self.serial.in_waiting)
-                self._serial_buffer.extend(data)
+                with self._buffer_lock:
+                    self._incoming_buffer.extend(data)
 
             parsed = self._try_parse_frame(expected_idx)
             if parsed:
@@ -222,30 +279,41 @@ class MBotOriginalProtocol:
             sleep(0.01)
         return None
 
+    def _read_ble_frame(self, expected_idx, timeout):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            parsed = self._try_parse_frame(expected_idx)
+            if parsed:
+                return parsed
+
+            sleep(0.01)
+        return None
+
     def _try_parse_frame(self, expected_idx):
-        buffer = self._serial_buffer
-        while len(buffer) >= 3:
-            if buffer[0] != 0xff or buffer[1] != 0x55:
-                buffer.pop(0)
-                continue
+        with self._buffer_lock:
+            buffer = self._incoming_buffer
+            while len(buffer) >= 3:
+                if buffer[0] != 0xff or buffer[1] != 0x55:
+                    buffer.pop(0)
+                    continue
 
-            length = buffer[2]
-            total = length + 3
-            if len(buffer) < total:
-                return None
+                length = buffer[2]
+                total = length + 3
+                if len(buffer) < total:
+                    return None
 
-            frame = bytes(buffer[:total])
-            del buffer[:total]
+                frame = bytes(buffer[:total])
+                del buffer[:total]
 
-            idx = frame[3]
-            if expected_idx is not None and idx != expected_idx:
-                # Descartar respuestas antiguas
-                continue
+                idx = frame[3]
+                if expected_idx is not None and idx != expected_idx:
+                    # Descartar respuestas antiguas
+                    continue
 
-            data_type = frame[4]
-            payload = frame[5:]
-            value = self._decode_value(data_type, payload)
-            return idx, value
+                data_type = frame[4]
+                payload = frame[5:]
+                value = self._decode_value(data_type, payload)
+                return idx, value
         return None
 
     def _decode_value(self, data_type, payload):
